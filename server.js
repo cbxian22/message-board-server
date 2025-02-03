@@ -9,7 +9,7 @@ const replyRoutes = require("./routes/replyRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
-const db = require("../config/db");
+const db = require("./config/db");
 dotenv.config();
 
 const app = express();
