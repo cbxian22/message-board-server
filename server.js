@@ -28,6 +28,17 @@ app.use(
 app.use(bodyParser.json());
 app.use(requestLogger);
 
+// **新增 `/health` API，讓 Render 保持活躍**
+app.get("/health", (req, res) => {
+  db.query("SELECT 1", (err) => {
+    if (err) {
+      res.status(500).send("❌ MySQL 連線失敗");
+    } else {
+      res.send("✅ 服務運行正常");
+    }
+  });
+});
+
 // 路由設定
 app.use("/api/login", loginRoutes);
 app.use("/api/register", registerRoutes);
