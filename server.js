@@ -9,7 +9,7 @@ const replyRoutes = require("./routes/replyRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
-
+const db = require("../config/db");
 dotenv.config();
 
 const app = express();
@@ -28,13 +28,13 @@ app.use(
 app.use(bodyParser.json());
 app.use(requestLogger);
 
-// **新增 `/health` API，讓 Render 保持活躍**
-app.get("/health", (req, res) => {
+// **新增 `/healthz` API，讓 Render 保持活躍**
+app.get("/healthz", (req, res) => {
   db.query("SELECT 1", (err) => {
     if (err) {
-      res.status(500).send("❌ MySQL 連線失敗");
+      res.status(500).send(" 活躍失敗");
     } else {
-      res.send("✅ 服務運行正常");
+      res.send("render 保持活躍");
     }
   });
 });
