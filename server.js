@@ -18,12 +18,13 @@ const app = express();
 // app.use(cors());
 app.use(
   cors({
-    origin: "https://message-board-front.vercel.app",
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
-    credentials: true,
+    origin: "https://message-board-front.vercel.app", // 允許的前端域名
+    methods: ["GET", "POST"], // 允許的 HTTP 方法
+    allowedHeaders: ["Content-Type", "Authorization"], // 允許的請求頭，新增 Authorization
+    credentials: true, // 是否允許攜帶憑證（例如 cookies）
   })
 );
+
 app.use(bodyParser.json());
 app.use(requestLogger);
 
