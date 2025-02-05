@@ -20,19 +20,40 @@ const app = express();
 const server = http.createServer(app); // 使用 http 建立伺服器
 const wss = new WebSocket.Server({ server }); // WebSocket 伺服器與 HTTP 伺服器共用
 
-// === WebSocket 連線管理 ===
+// 儲存所有連接的 WebSocket 用戶
+let clients = [];
+
 wss.on("connection", (ws) => {
   console.log("Client connected");
 
+  // 新的 WebSocket 客戶端連接時，將其推入 clients 陣列
+  clients.push(ws);
+
+  // 收到訊息時廣播給其他用戶
   ws.on("message", (message) => {
     console.log("Received:", message);
+
+    // 廣播訊息給其他所有客戶端
+    clients.forEach((client) => {
+      if (client !== ws && client.readyState === WebSocket.OPEN) {
+        client.send(message); // 發送訊息給所有在線用戶
+      }
+    });
   });
 
+  // 當連接關閉時，將這個客戶端從 clients 中移除
   ws.on("close", () => {
     console.log("Client disconnected");
+    clients = clients.filter((client) => client !== ws); // 移除已斷開的連接
+  });
+
+  // 處理錯誤
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
   });
 });
 
+// === 中間件設定 ===
 // app.use(cors());
 app.use(
   cors({
@@ -43,16 +64,6 @@ app.use(
   })
 );
 
-// WebSocket 廣播函式
-// const broadcastMessage = (message) => {
-//   wss.clients.forEach((client) => {
-//     if (client.readyState === WebSocket.OPEN) {
-//       client.send(JSON.stringify(message));
-//     }
-//   });
-// };
-
-// === 中間件設定 ===
 app.use(bodyParser.json());
 app.use(requestLogger);
 app.use(errorMiddleware);
