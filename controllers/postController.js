@@ -23,7 +23,7 @@ exports.createPost = (req, res) => {
       id: result.insertId,
       title,
       content,
-      userId,
+      user_id: userId,
       created_at: new Date(),
     };
 
