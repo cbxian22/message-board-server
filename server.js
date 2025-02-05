@@ -31,23 +31,22 @@ wss.on("connection", (ws) => {
 
   // 收到訊息時廣播給其他用戶
   ws.on("message", (message) => {
-    console.log("Received:", message);
+    console.log("Received message from client:", message);
 
     // 廣播訊息給其他所有客戶端
     clients.forEach((client) => {
       if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message); // 發送訊息給所有在線用戶
+        console.log("Broadcasting message to client");
+        client.send(message); // 發送訊息給其他所有連線的客戶端
       }
     });
   });
 
-  // 當連接關閉時，將這個客戶端從 clients 中移除
   ws.on("close", () => {
     console.log("Client disconnected");
     clients = clients.filter((client) => client !== ws); // 移除已斷開的連接
   });
 
-  // 處理錯誤
   ws.on("error", (error) => {
     console.error("WebSocket error:", error);
   });
