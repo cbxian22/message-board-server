@@ -46,10 +46,7 @@ module.exports = { app, server, wss };
 // app.use(cors());
 app.use(
   cors({
-    origin: [
-      "https://message-board-front.vercel.app",
-      "wss://message-board-server-7yot.onrender.com",
-    ], // 允許的前端域名 & WebSocket
+    origin: "https://message-board-front.vercel.app", // 只允許前端域名
     methods: ["GET", "POST", "PUT", "DELETE"], // 允許的 HTTP 方法
     allowedHeaders: ["Content-Type", "Authorization"], // 允許的請求頭，新增 Authorization
     credentials: true, // 是否允許攜帶憑證（例如 cookies）
