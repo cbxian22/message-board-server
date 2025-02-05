@@ -53,6 +53,6 @@ app.use("/api/upload", uploadRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`伺服器已啟動，監聽端口 ${PORT}`);
 });
