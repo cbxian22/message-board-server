@@ -10,37 +10,12 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
 const db = require("./config/db");
-const WebSocket = require("ws"); // 新增 WebSocket
-const http = require("http"); // 確保 HTTP 伺服器載入
 
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app); // 正確建立 HTTP 伺服器
-// 設定 WebSocket 伺服器
-const wss = new WebSocket.Server({ server });
 
-wss.on("connection", (ws) => {
-  console.log("✅ 新的 WebSocket 連接");
-
-  ws.on("message", (message) => {
-    console.log("📩 收到 WebSocket 訊息:", message);
-
-    // 當有新留言時，通知所有客戶端
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
-  });
-
-  ws.on("close", () => {
-    console.log("🔴 WebSocket 連線已關閉");
-  });
-});
-
-module.exports = { app, server }; // 先匯出 `app` 和 `server`
-module.exports.wss = wss; // 之後再匯出 `wss`
+module.exports = { app }; // 先匯出 `app` 和 `server`
 
 // Middleware 設定
 // app.use(cors());
@@ -52,15 +27,6 @@ app.use(
     credentials: true, // 是否允許攜帶憑證（例如 cookies）
   })
 );
-app.use((req, res, next) => {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://message-board-front.vercel.app"
-  );
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-});
 
 app.use(bodyParser.json());
 app.use(requestLogger);

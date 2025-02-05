@@ -1,6 +1,4 @@
 const db = require("../config/db");
-const { wss } = require("../server"); // 正確引入 WebSocket 伺服器
-const WebSocket = require("ws"); // 確保 WebSocket 定義正確
 
 // 创建新帖子
 exports.createPost = (req, res) => {
@@ -19,21 +17,6 @@ exports.createPost = (req, res) => {
       console.error("数据库错误 - 插入帖子: ", err);
       return res.status(500).json({ error: "数据库错误", details: err });
     }
-    const newPost = {
-      id: result.insertId,
-      title,
-      content,
-      user_id: userId,
-      created_at: new Date(),
-    };
-
-    // **WebSocket 廣播給所有客戶端**
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({ type: "new_post", data: newPost }));
-      }
-    });
-
     res.status(201).json({ success: true, postId: result.insertId });
   });
 };
@@ -98,17 +81,6 @@ exports.updatePost = (req, res) => {
         return res.status(404).json({ error: "帖子不存在" });
       }
 
-      const updatedPost = { id: postId, title, content };
-
-      // **WebSocket 廣播更新通知**
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(
-            JSON.stringify({ type: "update_post", data: updatedPost })
-          );
-        }
-      });
-
       res.status(200).json({ message: "帖子已更新" });
     });
   } else {
@@ -128,16 +100,6 @@ exports.updatePost = (req, res) => {
         if (err) {
           return res.status(500).json({ error: "数据库错误" });
         }
-        const updatedPost = { id: postId, title, content };
-
-        // **WebSocket 廣播更新通知**
-        wss.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(
-              JSON.stringify({ type: "update_post", data: updatedPost })
-            );
-          }
-        });
         res.status(200).json({ message: "帖子已更新" });
       });
     });
@@ -160,13 +122,6 @@ exports.deletePost = (req, res) => {
         return res.status(404).json({ error: "帖子不存在" });
       }
 
-      // **WebSocket 廣播刪除通知**
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({ type: "delete_post", postId }));
-        }
-      });
-
       res.status(200).json({ message: "帖子已删除" });
     });
   } else {
@@ -185,13 +140,6 @@ exports.deletePost = (req, res) => {
         if (err) {
           return res.status(500).json({ error: "数据库错误" });
         }
-
-        // **WebSocket 廣播刪除通知**
-        wss.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type: "delete_post", postId }));
-          }
-        });
 
         res.status(200).json({ message: "帖子已删除" });
       });
