@@ -26,27 +26,41 @@ let clients = [];
 wss.on("connection", (ws) => {
   console.log("Client connected");
 
-  // 新的 WebSocket 客戶端連接時，將其推入 clients 陣列
+  // 當連接成功時，將該客戶端加入 clients 陣列
   clients.push(ws);
 
-  // 收到訊息時廣播給其他用戶
+  // 當收到訊息時，廣播訊息給其他客戶端
   ws.on("message", (message) => {
-    console.log("Received message from client:", message);
+    console.log("Received message:", message); // 確認收到訊息
 
-    // 廣播訊息給其他所有客戶端
-    clients.forEach((client) => {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        console.log("Broadcasting message to client");
-        client.send(message); // 發送訊息給其他所有連線的客戶端
+    // 嘗試解析訊息
+    try {
+      const parsedMessage = JSON.parse(message);
+
+      // 確保訊息有 title 和 content 屬性
+      if (parsedMessage.title && parsedMessage.content) {
+        // 廣播訊息給其他所有連線的客戶端
+        clients.forEach((client) => {
+          if (client !== ws && client.readyState === WebSocket.OPEN) {
+            console.log("Broadcasting message to client:", client);
+            client.send(message); // 發送訊息給所有在線的其他用戶
+          }
+        });
+      } else {
+        console.error("Invalid message format:", parsedMessage);
       }
-    });
+    } catch (error) {
+      console.error("Error parsing message:", error);
+    }
   });
 
+  // 當連接關閉時，移除該客戶端
   ws.on("close", () => {
     console.log("Client disconnected");
     clients = clients.filter((client) => client !== ws); // 移除已斷開的連接
   });
 
+  // 處理 WebSocket 錯誤
   ws.on("error", (error) => {
     console.error("WebSocket error:", error);
   });
