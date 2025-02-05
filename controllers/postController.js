@@ -17,6 +17,20 @@ exports.createPost = (req, res) => {
       console.error("数据库错误 - 插入帖子: ", err);
       return res.status(500).json({ error: "数据库错误", details: err });
     }
+
+    const newPost = {
+      id: result.insertId,
+      title,
+      content,
+      user_id: userId,
+      created_at: new Date(),
+    };
+
+    // WebSocket 廣播新留言
+    if (broadcastMessage) {
+      broadcastMessage({ type: "NEW_POST", data: newPost });
+    }
+
     res.status(201).json({ success: true, postId: result.insertId });
   });
 };

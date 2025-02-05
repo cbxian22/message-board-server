@@ -20,12 +20,25 @@ const app = express();
 const server = http.createServer(app); // 使用 http 建立伺服器
 const wss = new WebSocket.Server({ server }); // WebSocket 伺服器與 HTTP 伺服器共用
 
-// WebSocket 監聽
+// **WebSocket 廣播函數**
+const broadcastMessage = (message) => {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(message));
+    }
+  });
+};
+
+// **WebSocket 監聽**
 wss.on("connection", (ws) => {
   console.log("Client connected");
+
   ws.on("message", (message) => {
     console.log("Received:", message);
-    ws.send("Message received"); // 回覆客戶端
+  });
+
+  ws.on("close", () => {
+    console.log("Client disconnected");
   });
 });
 
@@ -41,8 +54,12 @@ app.use(
 
 app.use(bodyParser.json());
 app.use(requestLogger);
-// 錯誤處理
-app.use(errorMiddleware);
+
+// **將 broadcastMessage 傳遞給 postRoutes**
+app.use((req, res, next) => {
+  req.broadcastMessage = broadcastMessage;
+  next();
+});
 
 // **新增 `/healthz` API，讓 Render 保持活躍**
 app.get("/healthz", (req, res) => {
@@ -61,6 +78,9 @@ app.use("/api/register", registerRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/replies", replyRoutes);
 app.use("/api/upload", uploadRoutes);
+
+// 錯誤處理
+app.use(errorMiddleware);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
