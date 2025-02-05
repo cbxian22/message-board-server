@@ -1,5 +1,7 @@
 const db = require("../config/db");
 
+const WebSocket = require("ws"); // 引入 WebSocket
+
 // 创建新帖子
 exports.createPost = (req, res) => {
   const { userId } = req.params; // 从 URL 路由参数中取得 userId
@@ -27,8 +29,13 @@ exports.createPost = (req, res) => {
     };
 
     // WebSocket 廣播新留言
-    if (broadcastMessage) {
-      broadcastMessage({ type: "NEW_POST", data: newPost });
+    const wss = req.app.get("wss"); // 使用 app.get() 獲取 wss 實例
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: "NEW_POST", data: newPost }));
+        }
+      });
     }
 
     res.status(201).json({ success: true, postId: result.insertId });

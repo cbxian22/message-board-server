@@ -3,8 +3,7 @@ const postController = require("../controllers/postController");
 const router = express.Router();
 
 // 創建帖子
-// router.post("/:userId", postController.createPost);
-router.post("/:userId", (req, res) => postController.createPost(req, res));
+router.post("/:userId", postController.createPost);
 
 // 獲取所有帖子
 router.get("/", postController.getAllPosts);
