@@ -11,18 +11,10 @@ const db = mysql.createPool({
   waitForConnections: true, // 如果沒有可用連線，等待連線釋放
   queueLimit: 0, // 0 表示無限等待請求
   connectTimeout: 10000, // **設定 10 秒連線超時**
-  acquireTimeout: 10000, // **設定 10 秒獲取連線超時**
   enableKeepAlive: true, // **保持 MySQL 連線活躍**
   keepAliveInitialDelay: 10000, // **每 10 秒發送 Keep-Alive**
 });
 
-// db.connect((err) => {
-//   if (err) {
-//     console.error("資料庫連線錯誤: ", err); // 顯示具體錯誤訊息
-//     return;
-//   }
-//   console.log("已成功連線到資料庫");
-// });
 // 測試連線
 db.getConnection((err, connection) => {
   if (err) {
