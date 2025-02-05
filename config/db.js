@@ -25,15 +25,19 @@ db.getConnection((err, connection) => {
   connection.release(); // 測試完畢後釋放連線
 });
 
-// **每 5 分鐘 Ping MySQL，保持連線**
-setInterval(() => {
+function pingMySQL() {
+  console.log(`⏳ [${new Date().toISOString()}] 測試 Ping MySQL...`);
   db.query("SELECT 1", (err) => {
     if (err) {
       console.error("❌ MySQL Ping 失敗:", err);
     } else {
-      console.log("✅ MySQL 仍然活躍");
+      console.log(`✅ [${new Date().toISOString()}] MySQL 仍然活躍`);
     }
   });
-}, 300000); // **5 分鐘 (300,000 毫秒)**
+
+  setTimeout(pingMySQL, 60000); // 10 秒後再執行
+}
+
+pingMySQL(); // 啟動函數
 
 module.exports = db;
