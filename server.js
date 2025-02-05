@@ -52,6 +52,15 @@ app.use(
     credentials: true, // 是否允許攜帶憑證（例如 cookies）
   })
 );
+app.use((req, res, next) => {
+  res.header(
+    "Access-Control-Allow-Origin",
+    "https://message-board-front.vercel.app"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
 
 app.use(bodyParser.json());
 app.use(requestLogger);
