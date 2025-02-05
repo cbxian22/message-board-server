@@ -39,8 +39,8 @@ wss.on("connection", (ws) => {
   });
 });
 
-// **讓 `wss` 和 `server` 可以被 postController.js 引用**
-module.exports = { app, server, wss };
+module.exports = { app, server }; // 先匯出 `app` 和 `server`
+module.exports.wss = wss; // 之後再匯出 `wss`
 
 // Middleware 設定
 // app.use(cors());
