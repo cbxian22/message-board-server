@@ -11,20 +11,20 @@ const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
 const db = require("./config/db");
 const WebSocket = require("ws"); // 新增 WebSocket
+const http = require("http"); // 確保 HTTP 伺服器載入
 
 dotenv.config();
 
 const app = express();
-const server = require("http").createServer(app); // 建立 HTTP 伺服器
-
+const server = http.createServer(app); // 正確建立 HTTP 伺服器
 // 設定 WebSocket 伺服器
 const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
-  console.log("新的 WebSocket 連接");
+  console.log("✅ 新的 WebSocket 連接");
 
   ws.on("message", (message) => {
-    console.log("收到 WebSocket 訊息:", message);
+    console.log("📩 收到 WebSocket 訊息:", message);
 
     // 當有新留言時，通知所有客戶端
     wss.clients.forEach((client) => {
@@ -35,18 +35,22 @@ wss.on("connection", (ws) => {
   });
 
   ws.on("close", () => {
-    console.log("WebSocket 連線已關閉");
+    console.log("🔴 WebSocket 連線已關閉");
   });
 });
-// **讓 `wss` 可以被 postController.js 引用**
-module.exports = { wss };
+
+// **讓 `wss` 和 `server` 可以被 postController.js 引用**
+module.exports = { app, server, wss };
 
 // Middleware 設定
 // app.use(cors());
 app.use(
   cors({
-    origin: "https://message-board-front.vercel.app", // 允許的前端域名
-    methods: ["GET", "POST"], // 允許的 HTTP 方法
+    origin: [
+      "https://message-board-front.vercel.app",
+      "wss://message-board-server-7yot.onrender.com",
+    ], // 允許的前端域名 & WebSocket
+    methods: ["GET", "POST", "PUT", "DELETE"], // 允許的 HTTP 方法
     allowedHeaders: ["Content-Type", "Authorization"], // 允許的請求頭，新增 Authorization
     credentials: true, // 是否允許攜帶憑證（例如 cookies）
   })
@@ -61,7 +65,7 @@ app.use(errorMiddleware);
 app.get("/healthz", (req, res) => {
   db.query("SELECT 1", (err) => {
     if (err) {
-      res.status(500).send(" 活躍失敗");
+      res.status(500).send("Render 保持活躍失敗");
     } else {
       res.send("render 保持活躍");
     }
@@ -77,6 +81,6 @@ app.use("/api/upload", uploadRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`伺服器已啟動，監聽端口 ${PORT}`);
 });
