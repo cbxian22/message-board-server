@@ -35,7 +35,7 @@ function pingMySQL() {
     }
   });
 
-  setTimeout(pingMySQL, 60000); // 10 秒後再執行
+  setTimeout(pingMySQL, 300000); // 10 秒後再執行
 }
 
 pingMySQL(); // 啟動函數
