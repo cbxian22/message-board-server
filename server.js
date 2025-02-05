@@ -81,4 +81,5 @@ server.listen(PORT, () => {
   console.log(`伺服器已啟動，監聽端口 ${PORT}`);
 });
 
-module.exports = { app, server, broadcastMessage };
+// module.exports = { app, server, broadcastMessage };
+module.exports = { app, server };
