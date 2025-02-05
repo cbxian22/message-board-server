@@ -18,17 +18,16 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app); // 使用 http 建立伺服器
-const wss = new Server({ server }); // WebSocket 伺服器與 HTTP 伺服器共用
+const wss = new WebSocket.Server({ server }); // WebSocket 伺服器與 HTTP 伺服器共用
 
-wss.on("connection", function connection(ws) {
-  console.log("server connection");
-  ws.on("message", function incoming(message) {
-    console.log("received: %s", message);
+// WebSocket 監聽
+wss.on("connection", (ws) => {
+  console.log("Client connected");
+  ws.on("message", (message) => {
+    console.log("Received:", message);
+    ws.send("Message received"); // 回覆客戶端
   });
-  ws.send("something");
 });
-
-module.exports = { app, server };
 
 // app.use(cors());
 app.use(
@@ -65,6 +64,8 @@ app.use("/api/upload", uploadRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`伺服器已啟動，監聽端口 ${PORT}`);
 });
+
+module.exports = { app, server };
