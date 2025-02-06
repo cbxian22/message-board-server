@@ -20,44 +20,37 @@ const app = express();
 const server = http.createServer(app); // 使用 http 建立伺服器
 const wss = new WebSocket.Server({ server }); // WebSocket 伺服器與 HTTP 伺服器共用
 
-// 儲存所有連接的 WebSocket 用戶
-let clients = [];
+// 儲存所有 WebSocket 連接
+const clients = new Set();
 
 wss.on("connection", (ws) => {
   console.log("Client connected");
+  clients.add(ws); // 加入客戶端
 
-  // 當連接成功時，將該客戶端加入 clients 陣列
-  clients.push(ws);
-
-  // 當收到訊息時，廣播訊息給其他客戶端
+  // 當收到訊息時，解析並廣播
   ws.on("message", (message) => {
-    console.log("Received message:", message); // 確認收到訊息
-
-    // 嘗試解析訊息
     try {
       const parsedMessage = JSON.parse(message);
+      console.log("Received message:", parsedMessage); // 確認收到訊息
 
-      // 確保訊息有 title 和 content 屬性
-      if (parsedMessage.title && parsedMessage.content) {
-        // 廣播訊息給其他所有連線的客戶端
-        clients.forEach((client) => {
-          if (client !== ws && client.readyState === WebSocket.OPEN) {
-            console.log("Broadcasting message to client:", client);
-            client.send(message); // 發送訊息給所有在線的其他用戶
-          }
-        });
-      } else {
-        console.error("Invalid message format:", parsedMessage);
-      }
+      // 廣播訊息給所有客戶端
+      clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          console.log("Broadcasting message to client:", parsedMessage); // 確認廣播
+          client.send(
+            JSON.stringify({ type: "new_message", data: parsedMessage })
+          );
+        }
+      });
     } catch (error) {
-      console.error("Error parsing message:", error);
+      console.error("Invalid message format:", error);
     }
   });
 
-  // 當連接關閉時，移除該客戶端
+  // 當客戶端斷開時，移除
   ws.on("close", () => {
     console.log("Client disconnected");
-    clients = clients.filter((client) => client !== ws); // 移除已斷開的連接
+    clients.delete(ws);
   });
 
   // 處理 WebSocket 錯誤
