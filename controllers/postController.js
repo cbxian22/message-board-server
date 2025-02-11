@@ -12,7 +12,7 @@ exports.createPost = (req, res) => {
   }
 
   // 插入帖子
-  const query = "INSERT INTO posts ( content, user_id) VALUES (?, ?, ?)";
+  const query = "INSERT INTO posts ( content, user_id) VALUES (?, ?)";
   db.query(query, [content, userId], (err, result) => {
     if (err) {
       console.error("数据库错误 - 插入帖子: ", err);

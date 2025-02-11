@@ -2,7 +2,7 @@ const db = require("../config/db");
 
 const Post = {
   create: (content, userId, callback) => {
-    const query = "INSERT INTO posts ( content, user_id) VALUES (?, ?, ?)";
+    const query = "INSERT INTO posts ( content, user_id) VALUES (?, ?)";
     db.query(query, [content, userId], callback);
   },
   findAll: (callback) => {
