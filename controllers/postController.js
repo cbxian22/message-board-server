@@ -3,16 +3,17 @@ const db = require("../config/db");
 // 创建新帖子
 exports.createPost = (req, res) => {
   const { userId } = req.params; // 从 URL 路由参数中取得 userId
-  const { title, content } = req.body; // 从请求体中取得标题和内容
+  const { content } = req.body; // 从请求体中取得标题和内容
+  // const { title, content } = req.body; // 从请求体中取得标题和内容
 
   // 检查必填字段
-  if (!title || !content) {
+  if (!content) {
     return res.status(400).json({ error: "缺少必填字段" });
   }
 
   // 插入帖子
-  const query = "INSERT INTO posts (title, content, user_id) VALUES (?, ?, ?)";
-  db.query(query, [title, content, userId], (err, result) => {
+  const query = "INSERT INTO posts ( content, user_id) VALUES (?, ?, ?)";
+  db.query(query, [content, userId], (err, result) => {
     if (err) {
       console.error("数据库错误 - 插入帖子: ", err);
       return res.status(500).json({ error: "数据库错误", details: err });
@@ -26,7 +27,7 @@ exports.createPost = (req, res) => {
 exports.getAllPosts = (req, res) => {
   // const query = "SELECT * FROM posts ORDER BY updated_at DESC";
   const query = `
-  SELECT posts.id, posts.title, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, users.name AS user_name
+  SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, users.name AS user_name
   FROM posts
   JOIN users ON posts.user_id = users.id
   ORDER BY posts.updated_at DESC
@@ -45,7 +46,7 @@ exports.getPostById = (req, res) => {
   const { postId } = req.params;
   // const query = "SELECT * FROM posts WHERE id = ?";
   const query = `
-    SELECT posts.id, posts.title, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, users.name AS user_name
+    SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, users.name AS user_name
     FROM posts
     JOIN users ON posts.user_id = users.id
     WHERE posts.id = ?
@@ -67,14 +68,14 @@ exports.updatePost = (req, res) => {
   const { role } = req.query; // 从查询参数中获取角色
 
   // 检查必填字段
-  if (!title || !content) {
+  if (!content) {
     return res.status(400).json({ error: "缺少必填字段" });
   }
 
   // 如果是 admin，用户可修改任何帖子
   if (role === "admin") {
-    const query = "UPDATE posts SET title = ?, content = ? WHERE id = ?";
-    db.query(query, [title, content, postId], (err, result) => {
+    const query = "UPDATE posts SET content = ? WHERE id = ?";
+    db.query(query, [content, postId], (err, result) => {
       if (err) {
         return res.status(500).json({ error: "数据库错误" });
       }
@@ -95,9 +96,8 @@ exports.updatePost = (req, res) => {
         return res.status(400).json({ error: "您无权修改该帖子" });
       }
 
-      const updateQuery =
-        "UPDATE posts SET title = ?, content = ? WHERE id = ?";
-      db.query(updateQuery, [title, content, postId], (err, result) => {
+      const updateQuery = "UPDATE posts SET content = ? WHERE id = ?";
+      db.query(updateQuery, [content, postId], (err, result) => {
         if (err) {
           return res.status(500).json({ error: "数据库错误" });
         }

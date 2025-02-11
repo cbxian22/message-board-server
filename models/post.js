@@ -1,10 +1,9 @@
 const db = require("../config/db");
 
 const Post = {
-  create: (title, content, userId, callback) => {
-    const query =
-      "INSERT INTO posts (title, content, user_id) VALUES (?, ?, ?)";
-    db.query(query, [title, content, userId], callback);
+  create: (content, userId, callback) => {
+    const query = "INSERT INTO posts ( content, user_id) VALUES (?, ?, ?)";
+    db.query(query, [content, userId], callback);
   },
   findAll: (callback) => {
     const query = "SELECT * FROM posts ORDER BY updated_at DESC";
