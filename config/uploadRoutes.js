@@ -1,19 +1,7 @@
-// const express = require("express");
-// const uploadController = require("../controllers/uploadController");
-// const multer = require("multer");
-// const upload = multer(); // 使用內存儲存
-
-// const router = express.Router();
-
-// // 上傳檔案
-// router.post("/", upload.single("file"), uploadController.uploadFile);
-
-// module.exports = router;
-
 // uploadRoutes.js
 const express = require("express");
 const multer = require("multer");
-const { uploadImage } = require("./storage.js"); // 引入你剛剛寫好的上傳圖片的函數
+const { uploadImage } = require("../config/storage"); // 引入你剛剛寫好的上傳圖片的函數
 
 const router = express.Router();
 

@@ -9,7 +9,7 @@ const loginRoutes = require("./routes/loginRoutes");
 const registerRoutes = require("./routes/registerRoutes");
 const postRoutes = require("./routes/postRoutes");
 const replyRoutes = require("./routes/replyRoutes");
-const uploadRoutes = require("./routes/uploadRoutes");
+const uploadRoutes = require("./routes/uploadRoutes"); // 引入 uploadRoutes
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
 const db = require("./config/db");
@@ -17,6 +17,7 @@ const db = require("./config/db");
 dotenv.config();
 
 const app = express();
+
 const server = http.createServer(app); // 使用 http 建立伺服器
 const wss = new WebSocket.Server({ server }); // WebSocket 伺服器與 HTTP 伺服器共用
 
@@ -91,7 +92,7 @@ app.use("/api/register", registerRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/replies", replyRoutes);
 app.use("/api/upload", uploadRoutes);
-
+app.use("/api", uploadRoutes); // 挂载 uploadRoutes 到 /api 路徑
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
