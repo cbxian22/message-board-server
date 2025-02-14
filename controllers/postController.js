@@ -61,6 +61,27 @@ exports.getPostById = (req, res) => {
   });
 };
 
+// 获取指定用户的所有帖子
+exports.getPostsByUserId = (req, res) => {
+  const { userId } = req.params; // 从 URL 获取用户 ID
+
+  const query = `
+    SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, users.name AS user_name
+    FROM posts
+    JOIN users ON posts.user_id = users.id
+    WHERE posts.user_id = ?
+    ORDER BY posts.updated_at DESC
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("数据库错误 - 获取指定用户的所有帖子: ", err); // 打印详细错误
+      return res.status(500).json({ message: "服务器错误", details: err });
+    }
+    res.status(200).json(results);
+  });
+};
+
 // 修改帖子
 exports.updatePost = (req, res) => {
   const { postId, userId } = req.params; // 从 URL 获取帖子 ID 和用户 ID
