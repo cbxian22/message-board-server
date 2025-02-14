@@ -13,7 +13,7 @@
 // uploadRoutes.js
 const express = require("express");
 const multer = require("multer");
-const { uploadImage } = require("./storage.js"); // 引入你剛剛寫好的上傳圖片的函數
+const { uploadImage } = require("../config/storage"); // 引入你剛剛寫好的上傳圖片的函數
 
 const router = express.Router();
 
