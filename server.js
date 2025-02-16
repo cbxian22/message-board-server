@@ -66,7 +66,16 @@ app.use(
   cors({
     origin: "https://message-board-front.vercel.app", // 只允許前端域名
     methods: ["GET", "POST", "PUT", "DELETE"], // 允許的 HTTP 方法
-    allowedHeaders: ["Content-Type", "Authorization"], // 允許的請求頭，新增 Authorization
+    allowedHeaders: [
+      "x-goog-algorithm",
+      "x-goog-credential",
+      "x-goog-date",
+      "x-goog-expires",
+      "x-goog-signedheaders",
+      "x-goog-signature",
+      "Content-Type",
+      "Authorization",
+    ], // 允許的請求頭，新增 Authorization
     credentials: true, // 是否允許攜帶憑證（例如 cookies）
   })
 );
