@@ -1,6 +1,4 @@
 const { Storage } = require("@google-cloud/storage");
-const express = require("express");
-const router = express.Router();
 
 const storage = new Storage({
   projectId: process.env.GCLOUD_PROJECT_ID,
@@ -10,8 +8,8 @@ const storage = new Storage({
 const bucketName = process.env.GCLOUD_BUCKET_NAME;
 const bucket = storage.bucket(bucketName);
 
-// 取得 Signed URL (供前端上傳檔案)
-router.get("/generate-signed-url", async (req, res) => {
+// 生成 Signed URL (供前端上傳檔案)
+exports.generateSignedUrl = async (req, res) => {
   const { filename, contentType } = req.query;
   if (!filename || !contentType) {
     return res.status(400).json({ error: "缺少 filename 或 contentType" });
@@ -35,6 +33,4 @@ router.get("/generate-signed-url", async (req, res) => {
     console.error("生成 Signed URL 失敗:", error);
     res.status(500).json({ error: "生成 Signed URL 失敗" });
   }
-});
-
-module.exports = router;
+};
