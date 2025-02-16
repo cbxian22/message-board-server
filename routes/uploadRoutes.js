@@ -2,6 +2,6 @@ const express = require("express");
 const router = express.Router();
 const uploadController = require("../controllers/uploadController");
 
-router.get("/upload/generate-signed-url", uploadController.generateSignedUrl);
+router.get("/", uploadController.generateSignedUrl);
 
 module.exports = router;
