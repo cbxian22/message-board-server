@@ -13,7 +13,7 @@ const replyRoutes = require("./routes/replyRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
 const db = require("./config/db");
-const uploadController = require("./uploadController");
+const uploadController = require("./controllers/uploadController");
 
 dotenv.config();
 
