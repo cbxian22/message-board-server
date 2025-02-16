@@ -9,7 +9,7 @@ const loginRoutes = require("./routes/loginRoutes");
 const registerRoutes = require("./routes/registerRoutes");
 const postRoutes = require("./routes/postRoutes");
 const replyRoutes = require("./routes/replyRoutes");
-const uploadRoutes = require("./routes/uploadRoutes"); // 引入 uploadRoutes
+// const uploadRoutes = require("./routes/uploadRoutes"); // 引入 uploadRoutes
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
 const db = require("./config/db");
@@ -92,8 +92,9 @@ app.use("/api/login", loginRoutes);
 app.use("/api/register", registerRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/replies", replyRoutes);
-app.use("/api/upload", uploadRoutes);
-app.use("/api", uploadRoutes); // 挂载 uploadRoutes 到 /api 路徑
+// app.use("/api/upload", uploadRoutes);
+// app.use("/api", uploadRoutes); // 挂载 uploadRoutes 到 /api 路徑
+app.use("/api/upload", uploadController); // 挂载 uploadRoutes 到 /api 路徑
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
