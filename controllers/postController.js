@@ -4,7 +4,6 @@ const db = require("../config/db");
 exports.createPost = (req, res) => {
   const { userId } = req.params; // 从 URL 路由参数中取得 userId
   const { content } = req.body; // 从请求体中取得标题和内容
-  // const { title, content } = req.body; // 从请求体中取得标题和内容
 
   // 检查必填字段
   if (!content) {
@@ -85,7 +84,7 @@ exports.getPostsByUserId = (req, res) => {
 // 修改帖子
 exports.updatePost = (req, res) => {
   const { postId, userId } = req.params; // 从 URL 获取帖子 ID 和用户 ID
-  const { title, content } = req.body; // 从请求体中获取修改的内容
+  const { content } = req.body; // 从请求体中获取修改的内容
   const { role } = req.query; // 从查询参数中获取角色
 
   // 检查必填字段

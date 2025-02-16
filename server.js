@@ -13,11 +13,12 @@ const uploadRoutes = require("./routes/uploadRoutes"); // 引入 uploadRoutes
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
 const db = require("./config/db");
+const uploadController = require("./uploadController");
 
 dotenv.config();
 
 const app = express();
-
+app.use(express.json());
 const server = http.createServer(app); // 使用 http 建立伺服器
 const wss = new WebSocket.Server({ server }); // WebSocket 伺服器與 HTTP 伺服器共用
 
