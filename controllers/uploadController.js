@@ -31,6 +31,9 @@ exports.generateSignedUrl = async (req, res) => {
     });
   } catch (error) {
     console.error("生成 Signed URL 失敗:", error);
-    res.status(500).json({ error: "生成 Signed URL 失敗" });
+
+    res
+      .status(500)
+      .json({ error: "生成 Signed URL 失敗", details: error.message });
   }
 };
