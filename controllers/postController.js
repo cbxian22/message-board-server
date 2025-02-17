@@ -174,10 +174,10 @@ exports.createPost = (req, res) => {
   const { userId } = req.params; // 从 URL 路由参数中取得 userId
   const { content, fileUrl } = req.body; // 从请求体中取得标题、内容和文件 URL
 
-  // 检查必填字段
-  if (!content) {
-    return res.status(400).json({ error: "缺少必填字段" });
-  }
+  // 检查必填字段取消，因為可以單除上傳圖片了
+  // if (!content) {
+  //   return res.status(400).json({ error: "缺少必填字段" });
+  // }
 
   // 插入帖子（新增 file_url 欄位）
   const query =
@@ -254,10 +254,6 @@ exports.updatePost = (req, res) => {
   const { postId, userId } = req.params; // 从 URL 获取帖子 ID 和用户 ID
   const { content, fileUrl } = req.body; // 从请求体中获取修改的内容和文件 URL
   const { role } = req.query; // 从查询参数中获取角色
-
-  if (!content) {
-    return res.status(400).json({ error: "缺少必填字段" });
-  }
 
   // 如果是 admin，用户可修改任何帖子
   if (role === "admin") {
