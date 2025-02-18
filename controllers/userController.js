@@ -2,11 +2,11 @@ const db = require("../config/db");
 
 // 取得使用者資訊（透過 username）
 exports.getUserByUsername = (req, res) => {
-  const { username } = req.params;
+  const { name } = req.params;
 
   db.query(
-    "SELECT id, name, account, role FROM users WHERE username = ?",
-    [username],
+    "SELECT id, name, account, role FROM users WHERE name = ?",
+    [name],
     (err, results) => {
       if (err) {
         console.error("資料庫錯誤:", err);

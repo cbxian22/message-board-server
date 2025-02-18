@@ -12,7 +12,7 @@ router.get("/", postController.getAllPosts);
 router.get("/:postId", postController.getPostById);
 
 // 获取指定用户名的所有帖子
-router.get("/user/:username", postController.getPostsByUsername);
+router.get("/user/:name", postController.getPostsByUsername);
 
 // 修改帖子
 router.put("/:postId/:userId", postController.updatePost);
