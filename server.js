@@ -7,6 +7,7 @@ const WebSocket = require("ws");
 
 const loginRoutes = require("./routes/loginRoutes");
 const registerRoutes = require("./routes/registerRoutes");
+const userRoutes = require("./routes/userRoutes");
 const postRoutes = require("./routes/postRoutes");
 const replyRoutes = require("./routes/replyRoutes");
 const uploadRoutes = require("./routes/uploadRoutes"); // 引入 uploadRoutes
@@ -101,6 +102,7 @@ app.use("/api/register", registerRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/replies", replyRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/users", uploadRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
