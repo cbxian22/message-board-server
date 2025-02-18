@@ -4,13 +4,13 @@ const db = require("../config/db");
 
 // 登入
 exports.login = async (req, res) => {
-  const { username, password, role } = req.body; // 加入 role
+  const { account, password, role } = req.body; // 加入 role
 
   try {
     // 查詢用戶是否存在
     db.query(
-      "SELECT * FROM users WHERE username = ?",
-      [username],
+      "SELECT * FROM users WHERE account = ?",
+      [account],
       async (err, results) => {
         if (err) {
           console.error("資料庫錯誤:", err);

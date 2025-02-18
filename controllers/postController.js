@@ -55,7 +55,7 @@ exports.getPostById = (req, res) => {
 
 // 获取指定用户名的所有帖子
 exports.getPostsByUsername = (req, res) => {
-  const { username } = req.params;
+  const { name } = req.params;
   const query = `
     SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, 
            users.name AS user_name, users.avatar_url AS user_avatar
@@ -64,7 +64,7 @@ exports.getPostsByUsername = (req, res) => {
     WHERE users.name = ?
     ORDER BY posts.updated_at DESC
   `;
-  db.query(query, [username], (err, results) => {
+  db.query(query, [name], (err, results) => {
     if (err) {
       console.error("数据库错误 - 获取指定用户名的所有帖子: ", err);
       return res.status(500).json({ message: "服务器错误", details: err });
