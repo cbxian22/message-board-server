@@ -8,19 +8,6 @@ const storage = new Storage({
 const bucketName = process.env.GCLOUD_BUCKET_NAME;
 const bucket = storage.bucket(bucketName);
 
-// 檢查桶是否存在
-bucket.exists((err, exists) => {
-  if (err) {
-    console.error("無法檢查桶存在性", err);
-    return;
-  }
-  if (!exists) {
-    console.error("桶不存在");
-  } else {
-    console.log("桶存在，繼續設定路由");
-  }
-});
-
 // 生成 Signed URL (供前端上傳檔案)
 exports.generateSignedUrl = async (req, res) => {
   const { filename, contentType } = req.query;

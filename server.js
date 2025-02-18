@@ -102,7 +102,7 @@ app.use("/api/register", registerRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/replies", replyRoutes);
 app.use("/api/upload", uploadRoutes);
-app.use("/api/users", uploadRoutes);
+app.use("/api/users", userRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
