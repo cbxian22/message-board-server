@@ -47,9 +47,14 @@ exports.login = async (req, res) => {
 
         // 簽發 JWT
         const token = jwt.sign(
-          { userId: user.id, role: user.role, userName: user.name },
+          {
+            userId: user.id,
+            role: user.role,
+            userName: user.name,
+            userAvatar: user.avatar_url,
+          },
           process.env.JWT_SECRET,
-          { expiresIn: "1h" }
+          { expiresIn: "15m" }
         );
 
         // 回傳成功的 token
