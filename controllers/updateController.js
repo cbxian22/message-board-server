@@ -2,9 +2,9 @@ const db = require("../config/db");
 
 exports.updateUserProfile = (req, res) => {
   const { name } = req.params; // 這是舊的 username
-  const { avatar, intro, name: newName } = req.body; // 從 body 取得新 username
+  const { avatar_url, intro, name: newName } = req.body; // 從 body 取得新 username
 
-  if (!avatar && !intro && !newName) {
+  if (!avatar_url && !intro && !newName) {
     return res.status(400).json({ message: "請提供要更新的資料" });
   }
 
@@ -16,9 +16,9 @@ exports.updateUserProfile = (req, res) => {
   const updateFields = [];
   const values = [];
 
-  if (avatar) {
-    updateFields.push("avatar = ?");
-    values.push(avatar);
+  if (avatar_url) {
+    updateFields.push("avatar_url = ?");
+    values.push(avatar_url);
   }
 
   if (intro) {
@@ -66,7 +66,7 @@ exports.updateUserProfile = (req, res) => {
       }
     );
   } else {
-    // 如果沒有要改 username，直接更新 avatar 和 intro
+    // 如果沒有要改 username，直接更新 avatar_url 和 intro
     db.query(sql, values, (err, result) => {
       if (err) {
         console.error("更新使用者資料失敗:", err);
