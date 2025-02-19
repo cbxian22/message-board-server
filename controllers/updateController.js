@@ -36,7 +36,7 @@ exports.updateUserProfile = (req, res) => {
   const sql = `UPDATE users SET ${updateFields.join(", ")} WHERE name = ?`;
 
   // 先檢查新 username 是否已被使用
-  if (newUsername) {
+  if (newName) {
     db.query(
       "SELECT id FROM users WHERE name = ?",
       [newName],
@@ -61,7 +61,7 @@ exports.updateUserProfile = (req, res) => {
             return res.status(404).json({ message: "使用者不存在" });
           }
 
-          res.status(200).json({ message: "使用者資料更新成功", newUsername });
+          res.status(200).json({ message: "使用者資料更新成功", newName });
         });
       }
     );
