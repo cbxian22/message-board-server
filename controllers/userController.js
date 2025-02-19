@@ -5,7 +5,7 @@ exports.getUserByUsername = (req, res) => {
   const { name } = req.params;
 
   db.query(
-    "SELECT id, name, account, role FROM users WHERE name = ?",
+    "SELECT id, name, account, intro, role FROM users WHERE name = ?",
     [name],
     (err, results) => {
       if (err) {
