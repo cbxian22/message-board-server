@@ -5,9 +5,12 @@ const dotenv = require("dotenv");
 const http = require("http"); // 新增 http 模組
 const WebSocket = require("ws");
 
-const loginRoutes = require("./routes/loginRoutes");
-const registerRoutes = require("./routes/registerRoutes");
+// const loginRoutes = require("./routes/loginRoutes");
+// const registerRoutes = require("./routes/registerRoutes");
+
+const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+
 const postRoutes = require("./routes/postRoutes");
 const replyRoutes = require("./routes/replyRoutes");
 const uploadRoutes = require("./routes/uploadRoutes"); // 引入 uploadRoutes
@@ -97,12 +100,14 @@ app.get("/healthz", (req, res) => {
 });
 
 // 路由設定
-app.use("/api/login", loginRoutes);
-app.use("/api/register", registerRoutes);
+// app.use("/api/login", loginRoutes);
+// app.use("/api/register", registerRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+
 app.use("/api/posts", postRoutes);
 app.use("/api/replies", replyRoutes);
 app.use("/api/upload", uploadRoutes);
-app.use("/api/users", userRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
