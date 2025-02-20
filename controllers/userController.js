@@ -1,25 +1,4 @@
-// // 取得使用者資訊
-// const db = require("../config/db");
-// exports.getUserByUsername = (req, res) => {
-//   const { name } = req.params;
-
-//   db.query(
-//     "SELECT id, name, account, intro, avatar_url ,role FROM users WHERE name = ?",
-//     [name],
-//     (err, results) => {
-//       if (err) {
-//         console.error("資料庫錯誤:", err);
-//         return res.status(500).json({ message: "伺服器錯誤" });
-//       }
-
-//       if (results.length === 0) {
-//         return res.status(404).json({ message: "使用者不存在" });
-//       }
-
-//       res.status(200).json(results[0]); // 回傳使用者資料
-//     }
-//   );
-// };
+// 用戶管理（查詢、更新個人資料、刪除）
 
 const db = require("../config/db");
 
@@ -128,22 +107,6 @@ const updateUser = (res, name, newName, intro, fileUrl) => {
 };
 
 // 刪除使用者
-// exports.deleteUser = (req, res) => {
-//   const { name } = req.params;
-
-//   db.query("DELETE FROM users WHERE name = ?", [name], (err, result) => {
-//     if (err) {
-//       console.error("刪除使用者失敗:", err);
-//       return res.status(500).json({ message: "伺服器錯誤" });
-//     }
-
-//     if (result.affectedRows === 0) {
-//       return res.status(404).json({ message: "使用者不存在" });
-//     }
-
-//     res.status(200).json({ message: "使用者已成功刪除" });
-//   });
-// };
 exports.deleteUser = (req, res) => {
   const { name } = req.params;
 
