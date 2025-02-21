@@ -74,41 +74,96 @@ exports.getPostsByUsername = (req, res) => {
 };
 
 // 修改帖子
+// exports.updatePost = (req, res) => {
+//   const { postId, userId } = req.params;
+//   const { content, fileUrl } = req.body;
+//   const { role } = req.query;
+
+//   if (role === "admin") {
+//     const query = "UPDATE posts SET content = ?, file_url = ? WHERE id = ?";
+//     db.query(query, [content, fileUrl || null, postId], (err, result) => {
+//       if (err) {
+//         return res.status(500).json({ error: "数据库错误" });
+//       }
+//       if (result.affectedRows === 0) {
+//         return res.status(404).json({ error: "帖子不存在" });
+//       }
+//       res.status(200).json({ message: "帖子已更新" });
+//     });
+//   } else {
+//     const checkQuery = "SELECT * FROM posts WHERE id = ? AND user_id = ?";
+//     db.query(checkQuery, [postId, userId], (err, result) => {
+//       if (err) {
+//         return res.status(500).json({ error: "数据库错误" });
+//       }
+//       if (result.length === 0) {
+//         return res.status(400).json({ error: "您无权修改该帖子" });
+//       }
+//       const updateQuery =
+//         "UPDATE posts SET content = ?, file_url = ? WHERE id = ?";
+//       db.query(
+//         updateQuery,
+//         [content, fileUrl || null, postId],
+//         (err, result) => {
+//           if (err) {
+//             return res.status(500).json({ error: "数据库错误" });
+//           }
+//           res.status(200).json({ message: "帖子已更新" });
+//         }
+//       );
+//     });
+//   }
+// };
 exports.updatePost = (req, res) => {
   const { postId, userId } = req.params;
   const { content, fileUrl } = req.body;
   const { role } = req.query;
 
+  // 驗證至少提供 content 或 fileUrl 其中之一
+  if (!content && !fileUrl) {
+    return res
+      .status(400)
+      .json({ error: "請提供內容或圖片 (content 或 fileUrl 至少擇一)" });
+  }
+
   if (role === "admin") {
+    // 管理員可以直接修改任何貼文
     const query = "UPDATE posts SET content = ?, file_url = ? WHERE id = ?";
-    db.query(query, [content, fileUrl || null, postId], (err, result) => {
-      if (err) {
-        return res.status(500).json({ error: "数据库错误" });
+    db.query(
+      query,
+      [content || null, fileUrl || null, postId],
+      (err, result) => {
+        if (err) {
+          return res.status(500).json({ error: "資料庫錯誤" });
+        }
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ error: "貼文不存在" });
+        }
+        res.status(200).json({ message: "貼文已更新" });
       }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "帖子不存在" });
-      }
-      res.status(200).json({ message: "帖子已更新" });
-    });
+    );
   } else {
+    // 先檢查貼文是否存在，並確認 userId 是否符合
     const checkQuery = "SELECT * FROM posts WHERE id = ? AND user_id = ?";
     db.query(checkQuery, [postId, userId], (err, result) => {
       if (err) {
-        return res.status(500).json({ error: "数据库错误" });
+        return res.status(500).json({ error: "資料庫錯誤" });
       }
       if (result.length === 0) {
-        return res.status(400).json({ error: "您无权修改该帖子" });
+        return res.status(403).json({ error: "您無權修改該貼文" });
       }
+
+      // 確保有內容需要更新
       const updateQuery =
         "UPDATE posts SET content = ?, file_url = ? WHERE id = ?";
       db.query(
         updateQuery,
-        [content, fileUrl || null, postId],
+        [content || null, fileUrl || null, postId],
         (err, result) => {
           if (err) {
-            return res.status(500).json({ error: "数据库错误" });
+            return res.status(500).json({ error: "資料庫錯誤" });
           }
-          res.status(200).json({ message: "帖子已更新" });
+          res.status(200).json({ message: "貼文已更新" });
         }
       );
     });
