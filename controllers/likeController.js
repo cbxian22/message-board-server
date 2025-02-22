@@ -1,3 +1,5 @@
+const db = require("../config/db");
+
 exports.likeItem = (req, res) => {
   const { userId } = req.params;
   const { targetType, targetId } = req.body;
