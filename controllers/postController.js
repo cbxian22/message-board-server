@@ -18,13 +18,6 @@ exports.createPost = (req, res) => {
 
 // 获取所有帖子
 exports.getAllPosts = (req, res) => {
-  // const query = `
-  //   SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url,
-  //          users.name AS user_name, users.avatar_url AS user_avatar
-  //   FROM posts
-  //   JOIN users ON posts.user_id = users.id
-  //   ORDER BY posts.updated_at DESC
-  // `;
   const query = `
   SELECT p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url, 
          u.name AS user_name, u.avatar_url AS user_avatar,
@@ -45,20 +38,13 @@ exports.getAllPosts = (req, res) => {
 // 获取单一帖子
 exports.getPostById = (req, res) => {
   const { postId } = req.params;
-  // const query = `
-  //   SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url,
-  //          users.name AS user_name, users.avatar_url AS user_avatar
-  //   FROM posts
-  //   JOIN users ON posts.user_id = users.id
-  //   WHERE posts.id = ?
-  // `;
   const query = `
   SELECT p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url, 
          u.name AS user_name, u.avatar_url AS user_avatar,
          (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
   FROM posts p
   JOIN users u ON p.user_id = u.id
-  ORDER BY p.updated_at DESC
+  WHERE p.id = ?
 `;
   db.query(query, [postId], (err, result) => {
     if (err || result.length === 0) {
@@ -72,22 +58,15 @@ exports.getPostById = (req, res) => {
 // 获取指定用户名的所有帖子
 exports.getPostsByUsername = (req, res) => {
   const { name } = req.params;
-  // const query = `
-  //   SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url,
-  //          users.name AS user_name, users.avatar_url AS user_avatar
-  //   FROM posts
-  //   JOIN users ON posts.user_id = users.id
-  //   WHERE users.name = ?
-  //   ORDER BY posts.updated_at DESC
-  // `;
   const query = `
-    SELECT p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url, 
-           u.name AS user_name, u.avatar_url AS user_avatar,
-           (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
-    FROM posts p
-    JOIN users u ON p.user_id = u.id
-    ORDER BY p.updated_at DESC
-  `;
+  SELECT p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url, 
+         u.name AS user_name, u.avatar_url AS user_avatar,
+         (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
+  FROM posts p
+  JOIN users u ON p.user_id = u.id
+  WHERE u.name = ?
+  ORDER BY p.updated_at DESC
+`;
   db.query(query, [name], (err, results) => {
     if (err) {
       console.error("数据库错误 - 获取指定用户名的所有帖子: ", err);
