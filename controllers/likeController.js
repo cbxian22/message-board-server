@@ -47,8 +47,8 @@ exports.likeItem = async (req, res) => {
         targetId,
       ]);
 
-    // 記錄查詢結果以進行調試
-    console.log("checkResult:", checkResult[0]);
+    // 詳細記錄查詢結果
+    console.log("checkQuery result:", JSON.stringify(checkResult[0]));
 
     if (!checkResult[0].target_exists) {
       return res
@@ -56,13 +56,15 @@ exports.likeItem = async (req, res) => {
         .json({ error: `${targetType === "post" ? "帖子" : "評論"}不存在` });
     }
 
-    // 確保 hasLiked 正確解析
-    const hasLiked = Number(checkResult[0].has_liked) === 1;
-    console.log("hasLiked:", hasLiked); // 調試用，檢查是否正確判斷
+    // 強制轉換並記錄 hasLiked 的計算過程
+    const rawHasLiked = checkResult[0].has_liked;
+    const hasLiked = Number(rawHasLiked) === 1;
+    console.log("rawHasLiked:", rawHasLiked, "computed hasLiked:", hasLiked);
+
     let newLikesCount = checkResult[0].likes_count;
 
     if (hasLiked) {
-      // 取消點讚
+      console.log("執行取消點讚");
       const deleteQuery =
         "DELETE FROM likes WHERE user_id = ? AND target_type = ? AND target_id = ?";
       await db.promise().query(deleteQuery, [userId, targetType, targetId]);
@@ -73,7 +75,7 @@ exports.likeItem = async (req, res) => {
         likesCount: newLikesCount,
       });
     } else {
-      // 點讚
+      console.log("執行點讚");
       const insertQuery =
         "INSERT INTO likes (user_id, target_type, target_id) VALUES (?, ?, ?)";
       await db.promise().query(insertQuery, [userId, targetType, targetId]);
