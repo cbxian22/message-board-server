@@ -7,10 +7,11 @@ const WebSocket = require("ws");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
-
 const postRoutes = require("./routes/postRoutes");
 const replyRoutes = require("./routes/replyRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const likeRoutes = require("./routes/likeRoutes");
+
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
 
@@ -100,10 +101,10 @@ app.get("/healthz", (req, res) => {
 // 路由設定
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-
 app.use("/api/posts", postRoutes);
 app.use("/api/replies", replyRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/like", likeRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
