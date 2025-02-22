@@ -34,22 +34,18 @@ exports.likeItem = async (req, res) => {
       throw new Error(`${targetType === "post" ? "帖子" : "評論"}不存在`);
     }
 
-    // 使用 FOR UPDATE 鎖定 likes 表中的相關記錄
+    // 檢查點讚狀態（不直接鎖定整個表）
     const checkQuery = `
       SELECT 
         EXISTS(SELECT 1 FROM ${targetTable} WHERE id = ?) AS target_exists,
         EXISTS(SELECT 1 FROM likes WHERE user_id = ? AND target_type = ? AND target_id = ?) AS has_liked,
         (SELECT COUNT(*) FROM likes WHERE target_type = ? AND target_id = ?) AS likes_count
-      FROM likes WHERE user_id = ? AND target_type = ? AND target_id = ? FOR UPDATE
     `;
     const [checkResult] = await connection.query(checkQuery, [
       targetId,
       userId,
       targetType,
       targetId,
-      targetType,
-      targetId,
-      userId,
       targetType,
       targetId,
     ]);
@@ -68,6 +64,11 @@ exports.likeItem = async (req, res) => {
 
     if (hasLiked) {
       console.log("執行取消點讚");
+      // 鎖定並刪除記錄
+      await connection.query(
+        "SELECT * FROM likes WHERE user_id = ? AND target_type = ? AND target_id = ? FOR UPDATE",
+        [userId, targetType, targetId]
+      );
       const deleteQuery =
         "DELETE FROM likes WHERE user_id = ? AND target_type = ? AND target_id = ?";
       await connection.query(deleteQuery, [userId, targetType, targetId]);
@@ -80,6 +81,11 @@ exports.likeItem = async (req, res) => {
       });
     } else {
       console.log("執行點讚");
+      // 鎖定並插入記錄
+      await connection.query(
+        "SELECT * FROM likes WHERE user_id = ? AND target_type = ? AND target_id = ? FOR UPDATE",
+        [userId, targetType, targetId]
+      );
       const insertQuery =
         "INSERT INTO likes (user_id, target_type, target_id) VALUES (?, ?, ?)";
       await connection.query(insertQuery, [userId, targetType, targetId]);
