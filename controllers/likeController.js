@@ -47,13 +47,18 @@ exports.likeItem = async (req, res) => {
         targetId,
       ]);
 
+    // 記錄查詢結果以進行調試
+    console.log("checkResult:", checkResult[0]);
+
     if (!checkResult[0].target_exists) {
       return res
         .status(404)
         .json({ error: `${targetType === "post" ? "帖子" : "評論"}不存在` });
     }
 
-    const hasLiked = Number(checkResult[0].has_liked) === 1; // 確保正確解析
+    // 確保 hasLiked 正確解析
+    const hasLiked = Number(checkResult[0].has_liked) === 1;
+    console.log("hasLiked:", hasLiked); // 調試用，檢查是否正確判斷
     let newLikesCount = checkResult[0].likes_count;
 
     if (hasLiked) {
