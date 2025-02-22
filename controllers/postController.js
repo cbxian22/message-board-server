@@ -18,15 +18,25 @@
 
 // // 获取所有帖子
 // exports.getAllPosts = (req, res) => {
+//   const userId = req.query.userId || null; // 從查詢參數獲取當前用戶 ID
+
 //   const query = `
-//   SELECT p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url,
-//          u.name AS user_name, u.avatar_url AS user_avatar,
-//          (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
-//   FROM posts p
-//   JOIN users u ON p.user_id = u.id
-//   ORDER BY p.updated_at DESC
-// `;
-//   db.query(query, (err, results) => {
+//     SELECT
+//       p.id,
+//       p.content,
+//       p.user_id,
+//       p.created_at,
+//       p.updated_at,
+//       p.file_url,
+//       u.name AS user_name,
+//       u.avatar_url AS user_avatar,
+//       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+//       EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked
+//     FROM posts p
+//     JOIN users u ON p.user_id = u.id
+//     ORDER BY p.updated_at DESC
+//   `;
+//   db.query(query, [userId], (err, results) => {
 //     if (err) {
 //       console.error("数据库错误 - 获取所有帖子: ", err);
 //       return res.status(500).json({ message: "服务器错误", details: err });
@@ -38,15 +48,25 @@
 // // 获取单一帖子
 // exports.getPostById = (req, res) => {
 //   const { postId } = req.params;
+//   const userId = req.query.userId || null; // 從查詢參數獲取當前用戶 ID
+
 //   const query = `
-//   SELECT p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url,
-//          u.name AS user_name, u.avatar_url AS user_avatar,
-//          (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
-//   FROM posts p
-//   JOIN users u ON p.user_id = u.id
-//   WHERE p.id = ?
-// `;
-//   db.query(query, [postId], (err, result) => {
+//     SELECT
+//       p.id,
+//       p.content,
+//       p.user_id,
+//       p.created_at,
+//       p.updated_at,
+//       p.file_url,
+//       u.name AS user_name,
+//       u.avatar_url AS user_avatar,
+//       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+//       EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked
+//     FROM posts p
+//     JOIN users u ON p.user_id = u.id
+//     WHERE p.id = ?
+//   `;
+//   db.query(query, [userId, postId], (err, result) => {
 //     if (err || result.length === 0) {
 //       console.error("数据库错误或找不到帖子: ", err);
 //       return res.status(404).json({ error: "帖子未找到", details: err });
@@ -58,16 +78,26 @@
 // // 获取指定用户名的所有帖子
 // exports.getPostsByUsername = (req, res) => {
 //   const { name } = req.params;
+//   const userId = req.query.userId || null; // 從查詢參數獲取當前用戶 ID
+
 //   const query = `
-//   SELECT p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url,
-//          u.name AS user_name, u.avatar_url AS user_avatar,
-//          (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
-//   FROM posts p
-//   JOIN users u ON p.user_id = u.id
-//   WHERE u.name = ?
-//   ORDER BY p.updated_at DESC
-// `;
-//   db.query(query, [name], (err, results) => {
+//     SELECT
+//       p.id,
+//       p.content,
+//       p.user_id,
+//       p.created_at,
+//       p.updated_at,
+//       p.file_url,
+//       u.name AS user_name,
+//       u.avatar_url AS user_avatar,
+//       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+//       EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked
+//     FROM posts p
+//     JOIN users u ON p.user_id = u.id
+//     WHERE u.name = ?
+//     ORDER BY p.updated_at DESC
+//   `;
+//   db.query(query, [userId, name], (err, results) => {
 //     if (err) {
 //       console.error("数据库错误 - 获取指定用户名的所有帖子: ", err);
 //       return res.status(500).json({ message: "服务器错误", details: err });
@@ -82,7 +112,6 @@
 //   const { content, fileUrl } = req.body;
 //   const { role } = req.query;
 
-//   // 驗證至少提供 content 或 fileUrl 其中之一
 //   if (!content && !fileUrl) {
 //     return res
 //       .status(400)
@@ -90,7 +119,6 @@
 //   }
 
 //   if (role === "admin") {
-//     // 管理員可以直接修改任何貼文
 //     const query = "UPDATE posts SET content = ?, file_url = ? WHERE id = ?";
 //     db.query(
 //       query,
@@ -106,7 +134,6 @@
 //       }
 //     );
 //   } else {
-//     // 先檢查貼文是否存在，並確認 userId 是否符合
 //     const checkQuery = "SELECT * FROM posts WHERE id = ? AND user_id = ?";
 //     db.query(checkQuery, [postId, userId], (err, result) => {
 //       if (err) {
@@ -116,7 +143,6 @@
 //         return res.status(403).json({ error: "您無權修改該貼文" });
 //       }
 
-//       // 確保有內容需要更新
 //       const updateQuery =
 //         "UPDATE posts SET content = ?, file_url = ? WHERE id = ?";
 //       db.query(
@@ -168,6 +194,7 @@
 //     });
 //   }
 // };
+
 const db = require("../config/db");
 
 // 创建新帖子
@@ -201,7 +228,8 @@ exports.getAllPosts = (req, res) => {
       u.name AS user_name, 
       u.avatar_url AS user_avatar,
       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked
+      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
+      (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
     FROM posts p
     JOIN users u ON p.user_id = u.id
     ORDER BY p.updated_at DESC
@@ -231,7 +259,8 @@ exports.getPostById = (req, res) => {
       u.name AS user_name, 
       u.avatar_url AS user_avatar,
       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked
+      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
+      (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
     FROM posts p
     JOIN users u ON p.user_id = u.id
     WHERE p.id = ?
@@ -261,7 +290,8 @@ exports.getPostsByUsername = (req, res) => {
       u.name AS user_name, 
       u.avatar_url AS user_avatar,
       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked
+      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
+      (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
     FROM posts p
     JOIN users u ON p.user_id = u.id
     WHERE u.name = ?
