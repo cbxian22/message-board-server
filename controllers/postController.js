@@ -171,36 +171,94 @@ exports.updatePost = (req, res) => {
 };
 
 // 删除帖子
+// exports.deletePost = (req, res) => {
+//   const { postId, userId } = req.params;
+//   const { role } = req.query;
+
+//   if (role === "admin") {
+//     const query = "DELETE FROM posts WHERE id = ?";
+//     db.query(query, [postId], (err, result) => {
+//       if (err) {
+//         return res.status(500).json({ error: "数据库错误" });
+//       }
+//       if (result.affectedRows === 0) {
+//         return res.status(404).json({ error: "帖子不存在" });
+//       }
+//       res.status(200).json({ message: "帖子已删除" });
+//     });
+//   } else {
+//     const checkQuery = "SELECT * FROM posts WHERE id = ? AND user_id = ?";
+//     db.query(checkQuery, [postId, userId], (err, result) => {
+//       if (err) {
+//         return res.status(500).json({ error: "数据库错误" });
+//       }
+//       if (result.length === 0) {
+//         return res.status(400).json({ error: "您无权删除该帖子" });
+//       }
+//       const deleteQuery = "DELETE FROM posts WHERE id = ?";
+//       db.query(deleteQuery, [postId], (err, result) => {
+//         if (err) {
+//           return res.status(500).json({ error: "数据库错误" });
+//         }
+//         res.status(200).json({ message: "帖子已删除" });
+//       });
+//     });
+//   }
+// };
 exports.deletePost = (req, res) => {
   const { postId, userId } = req.params;
   const { role } = req.query;
 
+  // 清理該帖子及其評論的點贊
+  const deleteLikesQuery = `
+    DELETE FROM likes 
+    WHERE (target_type = 'post' AND target_id = ?) 
+       OR (target_type = 'reply' AND target_id IN (SELECT id FROM replies WHERE post_id = ?))
+  `;
+  const deletePostQuery = "DELETE FROM posts WHERE id = ?";
+  const checkOwnershipQuery =
+    "SELECT * FROM posts WHERE id = ? AND user_id = ?";
+
   if (role === "admin") {
-    const query = "DELETE FROM posts WHERE id = ?";
-    db.query(query, [postId], (err, result) => {
+    // 管理員：先刪除點贊，再刪除帖子
+    db.query(deleteLikesQuery, [postId, postId], (err) => {
       if (err) {
+        console.error("删除点赞失败:", err);
         return res.status(500).json({ error: "数据库错误" });
       }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "帖子不存在" });
-      }
-      res.status(200).json({ message: "帖子已删除" });
+      db.query(deletePostQuery, [postId], (err, result) => {
+        if (err) {
+          console.error("删除帖子失败:", err);
+          return res.status(500).json({ error: "数据库错误" });
+        }
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ error: "帖子不存在" });
+        }
+        res.status(200).json({ message: "帖子及其评论和点赞已删除" });
+      });
     });
   } else {
-    const checkQuery = "SELECT * FROM posts WHERE id = ? AND user_id = ?";
-    db.query(checkQuery, [postId, userId], (err, result) => {
+    // 非管理員：檢查權限後刪除
+    db.query(checkOwnershipQuery, [postId, userId], (err, result) => {
       if (err) {
+        console.error("检查权限失败:", err);
         return res.status(500).json({ error: "数据库错误" });
       }
       if (result.length === 0) {
         return res.status(400).json({ error: "您无权删除该帖子" });
       }
-      const deleteQuery = "DELETE FROM posts WHERE id = ?";
-      db.query(deleteQuery, [postId], (err, result) => {
+      db.query(deleteLikesQuery, [postId, postId], (err) => {
         if (err) {
+          console.error("删除点赞失败:", err);
           return res.status(500).json({ error: "数据库错误" });
         }
-        res.status(200).json({ message: "帖子已删除" });
+        db.query(deletePostQuery, [postId], (err, result) => {
+          if (err) {
+            console.error("删除帖子失败:", err);
+            return res.status(500).json({ error: "数据库错误" });
+          }
+          res.status(200).json({ message: "帖子及其评论和点赞已删除" });
+        });
       });
     });
   }
