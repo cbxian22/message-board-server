@@ -20,8 +20,8 @@ exports.createPost = (req, res) => {
 exports.getAllPosts = (req, res) => {
   const query = `
     SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, 
-           users.name AS user_name, users.avatar_url AS user_avatar
-    FROM posts
+           users.name AS user_name, users.avatar_url AS user_avatar,(SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
+    FROM posts p
     JOIN users ON posts.user_id = users.id
     ORDER BY posts.updated_at DESC
   `;
@@ -39,8 +39,8 @@ exports.getPostById = (req, res) => {
   const { postId } = req.params;
   const query = `
     SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, 
-           users.name AS user_name, users.avatar_url AS user_avatar
-    FROM posts
+           users.name AS user_name, users.avatar_url AS user_avatar,(SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
+    FROM posts p
     JOIN users ON posts.user_id = users.id
     WHERE posts.id = ?
   `;
@@ -58,8 +58,8 @@ exports.getPostsByUsername = (req, res) => {
   const { name } = req.params;
   const query = `
     SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, 
-           users.name AS user_name, users.avatar_url AS user_avatar
-    FROM posts
+           users.name AS user_name, users.avatar_url AS user_avatar,(SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
+    FROM posts p
     JOIN users ON posts.user_id = users.id
     WHERE users.name = ?
     ORDER BY posts.updated_at DESC
