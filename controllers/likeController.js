@@ -57,7 +57,7 @@ exports.likeItem = (req, res) => {
               res.status(200).json({
                 message: "点赞成功",
                 action: "liked",
-                likesCount: countResult[0].count,
+                likesCount: countResult[0].count, //
               });
             }
           );
