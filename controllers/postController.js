@@ -19,15 +19,12 @@ exports.createPost = (req, res) => {
 // 获取所有帖子
 exports.getAllPosts = (req, res) => {
   const query = `
-  SELECT 
-    p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url,
-    u.name AS user_name, u.avatar_url AS user_avatar,
-    (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-    EXISTS (SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked
-  FROM posts p
-  JOIN users u ON p.user_id = u.id
-  ORDER BY p.updated_at DESC
-`;
+    SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url, 
+           users.name AS user_name, users.avatar_url AS user_avatar
+    FROM posts
+    JOIN users ON posts.user_id = users.id
+    ORDER BY posts.updated_at DESC
+  `;
   db.query(query, (err, results) => {
     if (err) {
       console.error("数据库错误 - 获取所有帖子: ", err);
@@ -40,16 +37,21 @@ exports.getAllPosts = (req, res) => {
 // 获取单一帖子
 exports.getPostById = (req, res) => {
   const { postId } = req.params;
+  // const query = `
+  //   SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url,
+  //          users.name AS user_name, users.avatar_url AS user_avatar
+  //   FROM posts
+  //   JOIN users ON posts.user_id = users.id
+  //   WHERE posts.id = ?
+  // `;
   const query = `
-  SELECT 
-    p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url,
-    u.name AS user_name, u.avatar_url AS user_avatar,
-    (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-    EXISTS (SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked
-  FROM posts p
-  JOIN users u ON p.user_id = u.id
-  ORDER BY p.updated_at DESC
-`;
+    SELECT p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url, 
+           u.name AS user_name, u.avatar_url AS user_avatar,
+           (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+    ORDER BY p.updated_at DESC
+  `;
   db.query(query, [postId], (err, result) => {
     if (err || result.length === 0) {
       console.error("数据库错误或找不到帖子: ", err);
@@ -62,16 +64,22 @@ exports.getPostById = (req, res) => {
 // 获取指定用户名的所有帖子
 exports.getPostsByUsername = (req, res) => {
   const { name } = req.params;
+  // const query = `
+  //   SELECT posts.id, posts.content, posts.user_id, posts.created_at, posts.updated_at, posts.file_url,
+  //          users.name AS user_name, users.avatar_url AS user_avatar
+  //   FROM posts
+  //   JOIN users ON posts.user_id = users.id
+  //   WHERE users.name = ?
+  //   ORDER BY posts.updated_at DESC
+  // `;
   const query = `
-  SELECT 
-    p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url,
-    u.name AS user_name, u.avatar_url AS user_avatar,
-    (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-    EXISTS (SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked
-  FROM posts p
-  JOIN users u ON p.user_id = u.id
-  ORDER BY p.updated_at DESC
-`;
+    SELECT p.id, p.content, p.user_id, p.created_at, p.updated_at, p.file_url, 
+           u.name AS user_name, u.avatar_url AS user_avatar,
+           (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+    ORDER BY p.updated_at DESC
+  `;
   db.query(query, [name], (err, results) => {
     if (err) {
       console.error("数据库错误 - 获取指定用户名的所有帖子: ", err);
@@ -82,6 +90,46 @@ exports.getPostsByUsername = (req, res) => {
 };
 
 // 修改帖子
+// exports.updatePost = (req, res) => {
+//   const { postId, userId } = req.params;
+//   const { content, fileUrl } = req.body;
+//   const { role } = req.query;
+
+//   if (role === "admin") {
+//     const query = "UPDATE posts SET content = ?, file_url = ? WHERE id = ?";
+//     db.query(query, [content, fileUrl || null, postId], (err, result) => {
+//       if (err) {
+//         return res.status(500).json({ error: "数据库错误" });
+//       }
+//       if (result.affectedRows === 0) {
+//         return res.status(404).json({ error: "帖子不存在" });
+//       }
+//       res.status(200).json({ message: "帖子已更新" });
+//     });
+//   } else {
+//     const checkQuery = "SELECT * FROM posts WHERE id = ? AND user_id = ?";
+//     db.query(checkQuery, [postId, userId], (err, result) => {
+//       if (err) {
+//         return res.status(500).json({ error: "数据库错误" });
+//       }
+//       if (result.length === 0) {
+//         return res.status(400).json({ error: "您无权修改该帖子" });
+//       }
+//       const updateQuery =
+//         "UPDATE posts SET content = ?, file_url = ? WHERE id = ?";
+//       db.query(
+//         updateQuery,
+//         [content, fileUrl || null, postId],
+//         (err, result) => {
+//           if (err) {
+//             return res.status(500).json({ error: "数据库错误" });
+//           }
+//           res.status(200).json({ message: "帖子已更新" });
+//         }
+//       );
+//     });
+//   }
+// };
 exports.updatePost = (req, res) => {
   const { postId, userId } = req.params;
   const { content, fileUrl } = req.body;
