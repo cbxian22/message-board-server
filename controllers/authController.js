@@ -285,6 +285,37 @@ exports.refreshToken = async (req, res) => {
   }
 };
 
+// 登出 - 新增功能
+exports.logout = async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res
+      .status(400)
+      .json({ success: false, message: "缺少 refreshToken" });
+  }
+
+  try {
+    // 從資料庫中刪除 refreshToken
+    db.query(
+      "DELETE FROM refresh_tokens WHERE token = ?",
+      [refreshToken],
+      (err, result) => {
+        if (err) {
+          console.error("刪除 refreshToken 失敗:", err);
+          return res
+            .status(500)
+            .json({ success: false, message: "伺服器錯誤" });
+        }
+        // 即使令牌不存在也返回成功，因為前端已清除本地資料
+        res.status(200).json({ success: true, message: "已登出" });
+      }
+    );
+  } catch (error) {
+    console.error("登出處理失敗:", error);
+    return res.status(500).json({ success: false, message: "伺服器錯誤" });
+  }
+};
+
 // 獲取當前用戶資訊（無變更）
 exports.getCurrentUser = (req, res) => {
   const userId = req.user.userId; // 從 middleware 提取
