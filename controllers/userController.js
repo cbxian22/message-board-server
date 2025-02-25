@@ -20,13 +20,19 @@ exports.getUserByUsername = (req, res) => {
 // 獲取當前用戶資訊 （從 auth middleware 提取 userId）
 exports.getCurrentUser = (req, res) => {
   const userId = req.user.userId;
+  console.log("getCurrentUser: userId =", userId); // 添加日誌
   db.query(
     "SELECT id, name, account, intro, avatar_url, role FROM users WHERE id = ?",
     [userId],
     (err, results) => {
-      if (err) return res.status(500).json({ message: "伺服器錯誤" });
-      if (results.length === 0)
+      if (err) {
+        console.error("Database error:", err);
+        return res.status(500).json({ message: "伺服器錯誤" });
+      }
+      if (results.length === 0) {
+        console.log(`No user found for userId: ${userId}`);
         return res.status(404).json({ message: "用戶不存在" });
+      }
       res.status(200).json(results[0]);
     }
   );

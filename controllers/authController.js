@@ -1,6 +1,5 @@
 // // // // 身份驗證（註冊、登入、登出）
 
-// =============================================
 // authController.js
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
