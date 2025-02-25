@@ -29,7 +29,7 @@ module.exports = (req, res, next) => {
     return res.status(401).json({ message: "未授權" });
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(" ")[1]; //test
   try {
     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET);
     req.user = { userId: decoded.userId };

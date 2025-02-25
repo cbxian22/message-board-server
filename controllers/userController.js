@@ -47,7 +47,7 @@ exports.getCurrentUser = (req, res) => {
         console.log(`No user found for userId: ${userId}`);
         return res.status(404).json({ message: "用戶不存在" });
       }
-      res.status(200).json(results[0]);
+      res.status(200).json(results[0]); //test
     }
   );
 };
