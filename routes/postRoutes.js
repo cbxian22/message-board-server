@@ -7,8 +7,7 @@ const router = express.Router();
 router.post("/:userId", postController.createPost);
 
 // 獲取所有帖子
-// router.get("/", postController.getAllPosts);
-router.get("/", authMiddleware, postController.getAllPosts); // 添加 authMiddleware
+router.get("/", postController.getAllPosts);
 
 // 獲取單一帖子
 router.get("/:postId", postController.getPostById);
