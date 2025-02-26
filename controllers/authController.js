@@ -143,26 +143,64 @@ exports.logout = async (req, res) => {
   }
 };
 
-// 獲取當前用戶資訊 （從 auth middleware 提取 userId）
-exports.getCurrentUser = (req, res) => {
-  const userId = req.user.userId;
-  db.query(
-    "SELECT id, name, account, intro, avatar_url, role FROM users WHERE id = ?",
-    [userId],
-    (err, results) => {
-      if (err) return res.status(500).json({ message: "伺服器錯誤" });
-      if (results.length === 0)
-        return res.status(404).json({ message: "用戶不存在" });
-      res.status(200).json(results[0]);
-    }
-  );
-};
+// // 獲取當前用戶資訊 （從 auth middleware 提取 userId）
+// exports.getCurrentUser = (req, res) => {
+//   const userId = req.user.userId;
+//   db.query(
+//     "SELECT id, name, account, intro, avatar_url, role FROM users WHERE id = ?",
+//     [userId],
+//     (err, results) => {
+//       if (err) return res.status(500).json({ message: "伺服器錯誤" });
+//       if (results.length === 0)
+//         return res.status(404).json({ message: "用戶不存在" });
+//       res.status(200).json(results[0]);
+//     }
+//   );
+// };
 
-// 註冊（無變更）
+// // 註冊（無變更）
+// exports.register = async (req, res) => {
+//   const { account, password, name, role } = req.body;
+
+//   // 驗證輸入
+//   if (!account || !password || !name || !role) {
+//     return res.status(400).json({ message: "請提供帳號、密碼、名稱和角色" });
+//   }
+//   if (!["admin", "user"].includes(role)) {
+//     return res.status(400).json({ message: "角色必須是 'admin' 或 'user'" });
+//   }
+
+//   try {
+//     // 檢查帳號是否已存在
+//     db.query(
+//       "SELECT * FROM users WHERE account = ?",
+//       [account],
+//       async (err, results) => {
+//         if (err) return res.status(500).json({ message: "伺服器錯誤" });
+//         if (results.length > 0)
+//           return res.status(400).json({ message: "帳號已被註冊" });
+
+//         // 加密密碼
+//         const hashedPassword = await bcrypt.hash(password, 10);
+
+//         // 插入新用戶
+//         db.query(
+//           "INSERT INTO users (account, password, name, role) VALUES (?, ?, ?, ?)",
+//           [account, hashedPassword, name, role],
+//           (err, result) => {
+//             if (err) return res.status(500).json({ message: "註冊失敗" });
+//             res.status(201).json({ success: true, message: "註冊成功" });
+//           }
+//         );
+//       }
+//     );
+//   } catch (error) {
+//     res.status(500).json({ message: "伺服器錯誤" });
+//   }
+// };
 exports.register = async (req, res) => {
   const { account, password, name, role } = req.body;
 
-  // 驗證輸入
   if (!account || !password || !name || !role) {
     return res.status(400).json({ message: "請提供帳號、密碼、名稱和角色" });
   }
@@ -171,7 +209,6 @@ exports.register = async (req, res) => {
   }
 
   try {
-    // 檢查帳號是否已存在
     db.query(
       "SELECT * FROM users WHERE account = ?",
       [account],
@@ -180,13 +217,10 @@ exports.register = async (req, res) => {
         if (results.length > 0)
           return res.status(400).json({ message: "帳號已被註冊" });
 
-        // 加密密碼
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // 插入新用戶
         db.query(
-          "INSERT INTO users (account, password, name, role) VALUES (?, ?, ?, ?)",
-          [account, hashedPassword, name, role],
+          "INSERT INTO users (account, password, name, role, is_private) VALUES (?, ?, ?, ?, ?)",
+          [account, hashedPassword, name, role, false], // 新增 is_private
           (err, result) => {
             if (err) return res.status(500).json({ message: "註冊失敗" });
             res.status(201).json({ success: true, message: "註冊成功" });
@@ -197,4 +231,19 @@ exports.register = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "伺服器錯誤" });
   }
+};
+
+// 調整 getCurrentUser，返回 is_private
+exports.getCurrentUser = (req, res) => {
+  const userId = req.user.userId;
+  db.query(
+    "SELECT id, name, account, intro, avatar_url, role, is_private FROM users WHERE id = ?",
+    [userId],
+    (err, results) => {
+      if (err) return res.status(500).json({ message: "伺服器錯誤" });
+      if (results.length === 0)
+        return res.status(404).json({ message: "用戶不存在" });
+      res.status(200).json(results[0]);
+    }
+  );
 };

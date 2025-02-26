@@ -11,6 +11,7 @@ const postRoutes = require("./routes/postRoutes");
 const replyRoutes = require("./routes/replyRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const likeRoutes = require("./routes/likeRoutes");
+const friendRoutes = require("./routes/friendRoutes");
 
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
@@ -105,6 +106,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/replies", replyRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/like", likeRoutes);
+app.use("/api/friends", friendRoutes);
 
 // 啟動伺服器
 const PORT = process.env.PORT || 3000;
