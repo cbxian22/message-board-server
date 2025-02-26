@@ -69,6 +69,7 @@ exports.createPost = (req, res) => {
 //   });
 // };
 
+// postController.js
 exports.getAllPosts = (req, res) => {
   const userId = req.user ? req.user.userId : null;
 
@@ -76,6 +77,7 @@ exports.getAllPosts = (req, res) => {
   let params;
 
   if (userId) {
+    console.log("登入用戶，主頁查詢，userId:", userId); // 添加日誌
     query = `
       SELECT 
         p.id, 
@@ -107,6 +109,7 @@ exports.getAllPosts = (req, res) => {
     `;
     params = [userId, userId, userId];
   } else {
+    console.log("未登入用戶，主頁查詢"); // 添加日誌
     query = `
       SELECT 
         p.id, 
@@ -135,6 +138,7 @@ exports.getAllPosts = (req, res) => {
       console.error("数据库错误 - 获取所有帖子: ", err);
       return res.status(500).json({ message: "服务器错误", details: err });
     }
+    console.log("主頁返回的貼文:", results); // 添加日誌查看返回數據
     res.status(200).json(results);
   });
 };
