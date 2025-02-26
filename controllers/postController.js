@@ -72,66 +72,31 @@ exports.createPost = (req, res) => {
 exports.getAllPosts = (req, res) => {
   const userId = req.user ? req.user.userId : null; // 若未登入，userId 為 null
 
-  let query;
-  let params;
+  const query = `
+    SELECT 
+      p.id, 
+      p.content, 
+      p.user_id, 
+      p.created_at, 
+      p.updated_at, 
+      p.file_url, 
+      p.visibility,
+      u.name AS user_name, 
+      u.avatar_url AS user_avatar,
+      u.is_private,
+      (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
+      (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies,
+      EXISTS(SELECT 1 FROM friends WHERE status = 'accepted' AND (
+        (user_id = ? AND friend_id = p.user_id) OR (friend_id = ? AND user_id = p.user_id)
+      )) AS is_friend
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+    ORDER BY p.updated_at DESC
+  `;
 
-  if (userId) {
-    // 登入用戶：公開貼文 + 自己的貼文 + 好友的貼文
-    query = `
-      SELECT 
-        p.id, 
-        p.content, 
-        p.user_id, 
-        p.created_at, 
-        p.updated_at, 
-        p.file_url, 
-        p.visibility,
-        u.name AS user_name, 
-        u.avatar_url AS user_avatar,
-        u.is_private,
-        (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-        EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
-        (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
-      FROM posts p
-      JOIN users u ON p.user_id = u.id
-      WHERE 
-        p.visibility = 'public'
-        OR p.user_id = ?
-        OR (p.visibility = 'friends' AND EXISTS (
-          SELECT 1 FROM friends 
-          WHERE status = 'accepted'
-          AND (
-            (user_id = ? AND friend_id = p.user_id)
-            OR (friend_id = ? AND user_id = p.user_id)
-          )
-        ))
-      ORDER BY p.updated_at DESC
-    `;
-    params = [userId, userId, userId, userId];
-  } else {
-    // 未登入用戶：只返回公開貼文
-    query = `
-      SELECT 
-        p.id, 
-        p.content, 
-        p.user_id, 
-        p.created_at, 
-        p.updated_at, 
-        p.file_url, 
-        p.visibility,
-        u.name AS user_name, 
-        u.avatar_url AS user_avatar,
-        u.is_private,
-        (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-        0 AS user_liked, -- 未登入無法按讚
-        (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
-      FROM posts p
-      JOIN users u ON p.user_id = u.id
-      WHERE p.visibility = 'public'
-      ORDER BY p.updated_at DESC
-    `;
-    params = [];
-  }
+  // 如果未登入，userId 為 null，傳入 null 給子查詢
+  const params = [userId || null, userId || null, userId || null];
 
   db.query(query, params, (err, results) => {
     if (err) {
