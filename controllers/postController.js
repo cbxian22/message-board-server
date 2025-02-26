@@ -69,15 +69,16 @@ exports.createPost = (req, res) => {
 //   });
 // };
 
-// postController.js
 exports.getAllPosts = (req, res) => {
+  // 從 authMiddleware 獲取 userId，若未登入則為 null
   const userId = req.user ? req.user.userId : null;
 
   let query;
   let params;
 
   if (userId) {
-    console.log("登入用戶，主頁查詢，userId:", userId); // 添加日誌
+    // 登入用戶：返回公開貼文 + 好友的 friends 貼文
+    console.log("登入用戶，主頁查詢，userId:", userId);
     query = `
       SELECT 
         p.id, 
@@ -96,8 +97,8 @@ exports.getAllPosts = (req, res) => {
       FROM posts p
       JOIN users u ON p.user_id = u.id
       WHERE 
-        p.visibility = 'public'
-        OR (p.visibility = 'friends' AND EXISTS (
+        p.visibility = 'public' -- 所有公開貼文
+        OR (p.visibility = 'friends' AND EXISTS ( -- 好友的 friends 貼文
           SELECT 1 FROM friends 
           WHERE status = 'accepted'
           AND (
@@ -109,7 +110,8 @@ exports.getAllPosts = (req, res) => {
     `;
     params = [userId, userId, userId];
   } else {
-    console.log("未登入用戶，主頁查詢"); // 添加日誌
+    // 未登入用戶：僅返回公開貼文
+    console.log("未登入用戶，主頁查詢");
     query = `
       SELECT 
         p.id, 
@@ -123,7 +125,7 @@ exports.getAllPosts = (req, res) => {
         u.avatar_url AS user_avatar,
         u.is_private,
         (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-        0 AS user_liked,
+        0 AS user_liked, -- 未登入無法按讚
         (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
       FROM posts p
       JOIN users u ON p.user_id = u.id
@@ -135,10 +137,10 @@ exports.getAllPosts = (req, res) => {
 
   db.query(query, params, (err, results) => {
     if (err) {
-      console.error("数据库错误 - 获取所有帖子: ", err);
-      return res.status(500).json({ message: "服务器错误", details: err });
+      console.error("數據庫錯誤 - 獲取所有貼文: ", err);
+      return res.status(500).json({ message: "伺服器錯誤", details: err });
     }
-    console.log("主頁返回的貼文:", results); // 添加日誌查看返回數據
+    console.log("主頁返回的貼文:", results); // 調試用日誌
     res.status(200).json(results);
   });
 };
