@@ -95,8 +95,8 @@ exports.getAllPosts = (req, res) => {
       FROM posts p
       JOIN users u ON p.user_id = u.id
       WHERE 
-        p.visibility = 'public' -- 所有公開貼文
-        OR (p.visibility = 'friends' AND EXISTS ( -- 好友的 friends 貼文
+        p.visibility = 'public'
+        OR (p.visibility = 'friends' AND EXISTS (
           SELECT 1 FROM friends 
           WHERE status = 'accepted'
           AND (
