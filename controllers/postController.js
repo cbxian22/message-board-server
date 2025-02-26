@@ -71,7 +71,7 @@ exports.createPost = (req, res) => {
 
 // 調整 getAllPosts，過濾可見性並檢查好友關係
 exports.getAllPosts = (req, res) => {
-  const userId = req.query.userId || null;
+  const userId = req.user.userId; // 從 authMiddleware 獲取當前用戶 ID
 
   const query = `
     SELECT 
@@ -91,13 +91,20 @@ exports.getAllPosts = (req, res) => {
     FROM posts p
     JOIN users u ON p.user_id = u.id
     WHERE 
+      -- 公開貼文
       p.visibility = 'public'
+      -- 自己的貼文
       OR p.user_id = ?
-      OR (p.visibility = 'friends' AND u.is_private = 1 AND EXISTS (
+      -- 好友的貼文（僅限 visibility = 'friends' 且雙方是好友）
+      OR (p.visibility = 'friends' AND EXISTS (
         SELECT 1 FROM friends 
-        WHERE (user_id = ? AND friend_id = p.user_id AND status = 'accepted')
-        OR (friend_id = ? AND user_id = p.user_id AND status = 'accepted')
+        WHERE status = 'accepted'
+        AND (
+          (user_id = ? AND friend_id = p.user_id)
+          OR (friend_id = ? AND user_id = p.user_id)
+        )
       ))
+      -- 私人貼文僅自己可見，已由 p.user_id = ? 涵蓋
     ORDER BY p.updated_at DESC
   `;
   db.query(query, [userId, userId, userId, userId], (err, results) => {
@@ -174,7 +181,7 @@ exports.getPostById = (req, res) => {
 // 調整 getPostsByUsername，過濾可見性
 exports.getPostsByUsername = (req, res) => {
   const { name } = req.params;
-  const userId = req.query.userId || null;
+  const userId = req.user.userId; // 從 authMiddleware 獲取當前用戶 ID
 
   const query = `
     SELECT 
@@ -195,16 +202,22 @@ exports.getPostsByUsername = (req, res) => {
     JOIN users u ON p.user_id = u.id
     WHERE u.name = ?
     AND (
+      -- 公開貼文
       p.visibility = 'public'
+      -- 自己的貼文
       OR p.user_id = ?
-      OR (p.visibility = 'friends' AND u.is_private = 1 AND EXISTS (
+      -- 好友的貼文（僅限 visibility = 'friends' 且雙方是好友）
+      OR (p.visibility = 'friends' AND EXISTS (
         SELECT 1 FROM friends 
-        WHERE (user_id = ? AND friend_id = p.user_id AND status = 'accepted')
-        OR (friend_id = ? AND user_id = p.user_id AND status = 'accepted')
+        WHERE status = 'accepted'
+        AND (
+          (user_id = ? AND friend_id = p.user_id)
+          OR (friend_id = ? AND user_id = p.user_id)
+        )
       ))
     )
     ORDER BY p.updated_at DESC
-  `;
+ `;
   db.query(query, [userId, name, userId, userId, userId], (err, results) => {
     if (err) {
       console.error("数据库错误 - 获取指定用户名的所有帖子: ", err);
