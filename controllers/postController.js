@@ -70,33 +70,65 @@ exports.createPost = (req, res) => {
 // };
 
 exports.getAllPosts = (req, res) => {
-  const userId = req.user ? req.user.userId : null; // 若未登入，userId 為 null
+  const userId = req.user ? req.user.userId : null;
 
-  const query = `
-    SELECT 
-      p.id, 
-      p.content, 
-      p.user_id, 
-      p.created_at, 
-      p.updated_at, 
-      p.file_url, 
-      p.visibility,
-      u.name AS user_name, 
-      u.avatar_url AS user_avatar,
-      u.is_private,
-      (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
-      (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies,
-      EXISTS(SELECT 1 FROM friends WHERE status = 'accepted' AND (
-        (user_id = ? AND friend_id = p.user_id) OR (friend_id = ? AND user_id = p.user_id)
-      )) AS is_friend
-    FROM posts p
-    JOIN users u ON p.user_id = u.id
-    ORDER BY p.updated_at DESC
-  `;
+  let query;
+  let params;
 
-  // 如果未登入，userId 為 null，傳入 null 給子查詢
-  const params = [userId || null, userId || null, userId || null];
+  if (userId) {
+    query = `
+      SELECT 
+        p.id, 
+        p.content, 
+        p.user_id, 
+        p.created_at, 
+        p.updated_at, 
+        p.file_url, 
+        p.visibility,
+        u.name AS user_name, 
+        u.avatar_url AS user_avatar,
+        u.is_private,
+        (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+        EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
+        (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE 
+        p.visibility = 'public'
+        OR (p.visibility = 'friends' AND EXISTS (
+          SELECT 1 FROM friends 
+          WHERE status = 'accepted'
+          AND (
+            (user_id = ? AND friend_id = p.user_id)
+            OR (friend_id = ? AND user_id = p.user_id)
+          )
+        ))
+      ORDER BY p.updated_at DESC
+    `;
+    params = [userId, userId, userId];
+  } else {
+    query = `
+      SELECT 
+        p.id, 
+        p.content, 
+        p.user_id, 
+        p.created_at, 
+        p.updated_at, 
+        p.file_url, 
+        p.visibility,
+        u.name AS user_name, 
+        u.avatar_url AS user_avatar,
+        u.is_private,
+        (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+        0 AS user_liked,
+        (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.visibility = 'public'
+      ORDER BY p.updated_at DESC
+    `;
+    params = [];
+  }
 
   db.query(query, params, (err, results) => {
     if (err) {
@@ -183,7 +215,7 @@ exports.getPostsByUsername = (req, res) => {
       p.created_at, 
       p.updated_at, 
       p.file_url, 
-      p.visibility, -- 確保返回此欄位
+      p.visibility,
       u.name AS user_name, 
       u.avatar_url AS user_avatar,
       u.is_private,
@@ -192,7 +224,7 @@ exports.getPostsByUsername = (req, res) => {
       (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies,
       EXISTS(SELECT 1 FROM friends WHERE status = 'accepted' AND (
         (user_id = ? AND friend_id = p.user_id) OR (friend_id = ? AND user_id = p.user_id)
-      )) AS is_friend -- 確保返回此欄位
+      )) AS is_friend
     FROM posts p
     JOIN users u ON p.user_id = u.id
     WHERE u.name = ?
@@ -221,6 +253,54 @@ exports.getPostsByUsername = (req, res) => {
       res.status(200).json(results);
     }
   );
+};
+
+// 新增好友頁：GET /api/friends/posts
+exports.getFriendsPosts = (req, res) => {
+  const userId = req.user ? req.user.userId : null;
+
+  if (!userId) {
+    return res.status(401).json({ message: "請先登入以查看好友貼文" });
+  }
+
+  const query = `
+    SELECT 
+      p.id, 
+      p.content, 
+      p.user_id, 
+      p.created_at, 
+      p.updated_at, 
+      p.file_url, 
+      p.visibility,
+      u.name AS user_name, 
+      u.avatar_url AS user_avatar,
+      u.is_private,
+      (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
+      (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+    WHERE 
+      (p.visibility = 'public' OR p.visibility = 'friends')
+      AND EXISTS (
+        SELECT 1 FROM friends 
+        WHERE status = 'accepted'
+        AND (
+          (user_id = ? AND friend_id = p.user_id)
+          OR (friend_id = ? AND user_id = p.user_id)
+        )
+      )
+    ORDER BY p.updated_at DESC
+  `;
+  const params = [userId, userId, userId];
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error("数据库错误 - 获取好友帖子: ", err);
+      return res.status(500).json({ message: "服务器错误", details: err });
+    }
+    res.status(200).json(results);
+  });
 };
 
 // // 修改帖子
