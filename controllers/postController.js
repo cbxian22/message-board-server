@@ -142,8 +142,6 @@ exports.createPost = (req, res) => {
 //     res.status(200).json(results);
 //   });
 // };
-// postController.js
-const db = require("../config/db");
 
 exports.getAllPosts = (req, res) => {
   const userId = req.user ? req.user.userId : null;
