@@ -169,9 +169,11 @@ exports.getAllPosts = (req, res) => {
       FROM posts p
       JOIN users u ON p.user_id = u.id
       WHERE 
-        -- 公開貼文，且用戶未設為私人
+        -- 未設私人的公開貼文（所有人可見）
         (p.visibility = 'public' AND u.is_private = 0)
-        -- 好友貼文（包括 private = true 的用戶的所有貼文，當作 friends 處理）
+        -- 自己的 public 和 friends 貼文（排除 private）
+        OR (p.user_id = ? AND p.visibility IN ('public', 'friends'))
+        -- 好友的 public 和 friends 貼文（包括 private = true 的用戶）
         OR (p.visibility IN ('public', 'friends') AND EXISTS (
           SELECT 1 FROM friends 
           WHERE status = 'accepted'
@@ -182,7 +184,7 @@ exports.getAllPosts = (req, res) => {
         ))
       ORDER BY p.updated_at DESC
     `;
-    params = [userId, userId, userId];
+    params = [userId, userId, userId, userId];
   } else {
     console.log("未登入用戶，主頁查詢");
     query = `
@@ -218,6 +220,7 @@ exports.getAllPosts = (req, res) => {
     res.status(200).json(results);
   });
 };
+
 // 获取单一帖子
 exports.getPostById = (req, res) => {
   const { postId } = req.params;
@@ -337,55 +340,80 @@ exports.getPostsByUsername = (req, res) => {
   const { name } = req.params;
   const userId = req.user ? req.user.userId : null;
 
-  const query = `
-    SELECT 
-      p.id, 
-      p.content, 
-      p.user_id, 
-      p.created_at, 
-      p.updated_at, 
-      p.file_url, 
-      p.visibility,
-      u.name AS user_name, 
-      u.avatar_url AS user_avatar,
-      u.is_private,
-      (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-      EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
-      (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies,
-      EXISTS(SELECT 1 FROM friends WHERE status = 'accepted' AND (
-        (user_id = ? AND friend_id = p.user_id) OR (friend_id = ? AND user_id = p.user_id)
-      )) AS is_friend
-    FROM posts p
-    JOIN users u ON p.user_id = u.id
-    WHERE u.name = ?
-    AND (
-      -- 公開貼文，且用戶未設為私人
-      (p.visibility = 'public' AND u.is_private = 0)
-      -- 自己的所有貼文
-      OR p.user_id = ?
-      -- 好友的 public 和 friends 貼文（包括 private = true 的用戶）
-      OR (p.visibility IN ('public', 'friends') AND EXISTS (
-        SELECT 1 FROM friends 
-        WHERE status = 'accepted'
-        AND (
-          (user_id = ? AND friend_id = p.user_id)
-          OR (friend_id = ? AND user_id = p.user_id)
-        )
-      ))
-    )
-    ORDER BY p.updated_at DESC
-  `;
-  db.query(
-    query,
-    [userId, userId, userId, name, userId, userId, userId],
-    (err, results) => {
-      if (err) {
-        console.error("數據庫錯誤 - 獲取指定用戶貼文: ", err);
-        return res.status(500).json({ message: "伺服器錯誤", details: err });
-      }
-      res.status(200).json(results);
+  let query;
+  let params;
+
+  if (userId) {
+    console.log("登入用戶，個人頁面查詢，userId:", userId, "name:", name);
+    query = `
+      SELECT 
+        p.id, 
+        p.content, 
+        p.user_id, 
+        p.created_at, 
+        p.updated_at, 
+        p.file_url, 
+        p.visibility,
+        u.name AS user_name, 
+        u.avatar_url AS user_avatar,
+        u.is_private,
+        (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+        EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
+        (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies,
+        EXISTS(SELECT 1 FROM friends WHERE status = 'accepted' AND (
+          (user_id = ? AND friend_id = p.user_id) OR (friend_id = ? AND user_id = p.user_id)
+        )) AS is_friend
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE u.name = ?
+      AND (
+        (p.visibility = 'public' AND u.is_private = 0)
+        OR p.user_id = ?
+        OR (p.visibility IN ('public', 'friends') AND EXISTS (
+          SELECT 1 FROM friends 
+          WHERE status = 'accepted'
+          AND (
+            (user_id = ? AND friend_id = p.user_id)
+            OR (friend_id = ? AND user_id = p.user_id)
+          )
+        ))
+      )
+      ORDER BY p.updated_at DESC
+    `;
+    params = [userId, userId, userId, name, userId, userId, userId];
+  } else {
+    console.log("未登入用戶，個人頁面查詢，name:", name);
+    query = `
+      SELECT 
+        p.id, 
+        p.content, 
+        p.user_id, 
+        p.created_at, 
+        p.updated_at, 
+        p.file_url, 
+        p.visibility,
+        u.name AS user_name, 
+        u.avatar_url AS user_avatar,
+        u.is_private,
+        (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+        0 AS user_liked,
+        (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
+      FROM posts p
+      JOIN users u ON p.user_id = u.id
+      WHERE u.name = ?
+      AND p.visibility = 'public' AND u.is_private = 0
+      ORDER BY p.updated_at DESC
+    `;
+    params = [name];
+  }
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error("數據庫錯誤 - 獲取指定用戶貼文: ", err);
+      return res.status(500).json({ message: "伺服器錯誤", details: err });
     }
-  );
+    res.status(200).json(results);
+  });
 };
 
 // 新增好友頁：GET /api/friends/posts
