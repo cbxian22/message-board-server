@@ -8,7 +8,8 @@ const router = express.Router();
 router.post("/:userId", authMiddleware, postController.createPost);
 
 // 獲取所有帖子
-router.get("/", postController.getAllPosts);
+// router.get("/", postController.getAllPosts);
+router.get("/", authMiddleware, postController.getAllPosts); // 添加 authMiddleware
 
 // 新增好友頁路由
 router.get("/friends", authMiddleware, postController.getFriendsPosts);

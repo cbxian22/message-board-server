@@ -19,6 +19,7 @@
 // };
 // middleware/auth.js
 // middleware/auth.js
+// middleware/auth.js
 const jwt = require("jsonwebtoken");
 const ACCESS_TOKEN_SECRET =
   process.env.JWT_SECRET || "your-access-token-secret";
@@ -39,7 +40,7 @@ module.exports = (req, res, next) => {
     next();
   } catch (error) {
     console.error("Token 解析失敗:", error.message);
-    req.user = null; // token 無效時視為未登入
-    next();
+    req.user = null;
+    next(); // token 無效時繼續執行，視為未登入
   }
 };
