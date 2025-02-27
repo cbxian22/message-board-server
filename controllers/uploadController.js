@@ -1,26 +1,13 @@
 const { Storage } = require("@google-cloud/storage");
 
-// const credentials = JSON.parse(process.env.GCLOUD_KEYFILE);
-
-// 檢查並解析 GCLOUD_KEYFILE
-let credentials;
-try {
-  if (!process.env.GCLOUD_KEYFILE) {
-    throw new Error("環境變數 GCLOUD_KEYFILE 未設定");
-  }
-  credentials = JSON.parse(process.env.GCLOUD_KEYFILE);
-} catch (error) {
-  console.error("解析 GCLOUD_KEYFILE 失敗:", error.message);
-  throw error; // 讓程式停止，提醒修環境變數
-}
+const credentials = JSON.parse(process.env.GCLOUD_KEYFILE);
 
 const storage = new Storage({
   projectId: process.env.GCLOUD_PROJECT_ID,
   credentials: credentials,
 });
 
-const bucketName = process.env.GCLOUD_BUCKET_NAME;
-const bucket = storage.bucket(bucketName);
+const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
 
 // 生成 Signed URL (供前端上傳檔案)
 exports.generateSignedUrl = async (req, res) => {
