@@ -96,6 +96,7 @@ exports.getAllPosts = (req, res) => {
       console.error("數據庫錯誤 - 獲取所有貼文: ", err);
       return res.status(500).json({ message: "伺服器錯誤", details: err });
     }
+    console.log("Message Board Server is running by seaching Posts");
     res.status(200).json(results);
   });
 };
