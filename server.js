@@ -1,11 +1,10 @@
-// === 依賴導入 ===
 const express = require("express");
 const cors = require("cors");
+const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
-const http = require("http");
+const http = require("http"); // 新增 http 模組
 const WebSocket = require("ws");
 
-// 路由檔案
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const postRoutes = require("./routes/postRoutes");
@@ -14,34 +13,35 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const likeRoutes = require("./routes/likeRoutes");
 const friendRoutes = require("./routes/friendRoutes");
 
-// 中間件與配置
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
+
 const db = require("./config/db");
 
-// === 環境設定 ===
 dotenv.config();
 
-// === 應用初始化 ===
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+app.use(express.json());
+const server = http.createServer(app); // 使用 http 建立伺服器
+const wss = new WebSocket.Server({ server }); // WebSocket 伺服器與 HTTP 伺服器共用
 
-// === WebSocket 設定 ===
+// 儲存所有 WebSocket 連接
 const clients = new Set();
 
 wss.on("connection", (ws) => {
   console.log("Client connected");
-  clients.add(ws);
+  clients.add(ws); // 加入客戶端
 
+  // 當收到訊息時，解析並廣播
   ws.on("message", (message) => {
     try {
       const parsedMessage = JSON.parse(message);
-      console.log("Received message:", parsedMessage);
+      console.log("Received message:", parsedMessage); // 確認收到訊息
 
+      // 廣播訊息給所有客戶端
       clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-          console.log("Broadcasting message to client:", parsedMessage);
+          console.log("Broadcasting message to client:", parsedMessage); // 確認廣播
           client.send(
             JSON.stringify({ type: "new_message", data: parsedMessage })
           );
@@ -52,22 +52,24 @@ wss.on("connection", (ws) => {
     }
   });
 
+  // 當客戶端斷開時，移除
   ws.on("close", () => {
     console.log("Client disconnected");
     clients.delete(ws);
   });
 
+  // 處理 WebSocket 錯誤
   ws.on("error", (error) => {
     console.error("WebSocket error:", error);
   });
 });
 
 // === 中間件設定 ===
-app.use(express.json());
+// app.use(cors());
 app.use(
   cors({
-    origin: "https://message-board-front.vercel.app",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: "https://message-board-front.vercel.app", // 只允許前端域名
+    methods: ["GET", "POST", "PUT", "DELETE"], // 允許的 HTTP 方法
     allowedHeaders: [
       "x-goog-algorithm",
       "x-goog-credential",
@@ -77,14 +79,16 @@ app.use(
       "x-goog-signature",
       "Content-Type",
       "Authorization",
-    ],
-    credentials: true,
+    ], // 允許的請求頭，新增 Authorization
+    credentials: true, // 是否允許攜帶憑證（例如 cookies）
   })
 );
+
+app.use(bodyParser.json());
 app.use(requestLogger);
 app.use(errorMiddleware);
 
-// === 路由設定 ===
+// 路由設定
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
@@ -93,11 +97,115 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/like", likeRoutes);
 app.use("/api/friends", friendRoutes);
 
-// === 伺服器啟動 ===
+// 啟動伺服器
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`伺服器已啟動，監聽端口 ${PORT}`);
 });
 
-// === 模組匯出 ===
+// module.exports = { app, server, broadcastMessage };
 module.exports = { app, server };
+
+// // === 依賴導入 ===
+// const express = require("express");
+// const cors = require("cors");
+// const dotenv = require("dotenv");
+// const http = require("http");
+// const WebSocket = require("ws");
+
+// // 路由檔案
+// const authRoutes = require("./routes/authRoutes");
+// const userRoutes = require("./routes/userRoutes");
+// const postRoutes = require("./routes/postRoutes");
+// const replyRoutes = require("./routes/replyRoutes");
+// const uploadRoutes = require("./routes/uploadRoutes");
+// const likeRoutes = require("./routes/likeRoutes");
+// const friendRoutes = require("./routes/friendRoutes");
+
+// // 中間件與配置
+// const errorMiddleware = require("./middleware/errorMiddleware");
+// const requestLogger = require("./middleware/requestLogger");
+// const db = require("./config/db");
+
+// // === 環境設定 ===
+// dotenv.config();
+
+// // === 應用初始化 ===
+// const app = express();
+// const server = http.createServer(app);
+// const wss = new WebSocket.Server({ server });
+
+// // === WebSocket 設定 ===
+// const clients = new Set();
+
+// wss.on("connection", (ws) => {
+//   console.log("Client connected");
+//   clients.add(ws);
+
+//   ws.on("message", (message) => {
+//     try {
+//       const parsedMessage = JSON.parse(message);
+//       console.log("Received message:", parsedMessage);
+
+//       clients.forEach((client) => {
+//         if (client.readyState === WebSocket.OPEN) {
+//           console.log("Broadcasting message to client:", parsedMessage);
+//           client.send(
+//             JSON.stringify({ type: "new_message", data: parsedMessage })
+//           );
+//         }
+//       });
+//     } catch (error) {
+//       console.error("Invalid message format:", error);
+//     }
+//   });
+
+//   ws.on("close", () => {
+//     console.log("Client disconnected");
+//     clients.delete(ws);
+//   });
+
+//   ws.on("error", (error) => {
+//     console.error("WebSocket error:", error);
+//   });
+// });
+
+// // === 中間件設定 ===
+// app.use(express.json());
+// app.use(
+//   cors({
+//     origin: "https://message-board-front.vercel.app",
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     allowedHeaders: [
+//       "x-goog-algorithm",
+//       "x-goog-credential",
+//       "x-goog-date",
+//       "x-goog-expires",
+//       "x-goog-signedheaders",
+//       "x-goog-signature",
+//       "Content-Type",
+//       "Authorization",
+//     ],
+//     credentials: true,
+//   })
+// );
+// app.use(requestLogger);
+// app.use(errorMiddleware);
+
+// // === 路由設定 ===
+// app.use("/api/auth", authRoutes);
+// app.use("/api/users", userRoutes);
+// app.use("/api/posts", postRoutes);
+// app.use("/api/replies", replyRoutes);
+// app.use("/api/upload", uploadRoutes);
+// app.use("/api/like", likeRoutes);
+// app.use("/api/friends", friendRoutes);
+
+// // === 伺服器啟動 ===
+// const PORT = process.env.PORT || 3000;
+// server.listen(PORT, () => {
+//   console.log(`伺服器已啟動，監聽端口 ${PORT}`);
+// });
+
+// // === 模組匯出 ===
+// module.exports = { app, server };

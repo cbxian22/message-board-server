@@ -38,3 +38,4 @@ exports.generateSignedUrl = async (req, res) => {
       .json({ error: "生成 Signed URL 失敗", details: error.message });
   }
 };
+console.log("GCLOUD_KEYFILE:", process.env.GCLOUD_KEYFILE);
