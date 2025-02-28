@@ -1,13 +1,12 @@
 const { Storage } = require("@google-cloud/storage");
-
-const credentials = JSON.parse(process.env.GCLOUD_KEYFILE);
-
+const credeㄈntials = JSON.parse(process.env.GCLOUD_KEYFILE);
 const storage = new Storage({
   projectId: process.env.GCLOUD_PROJECT_ID,
   credentials: credentials,
 });
 
-const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
+const bucketName = process.env.GCLOUD_BUCKET_NAME;
+const bucket = storage.bucket(bucketName);
 
 // 生成 Signed URL (供前端上傳檔案)
 exports.generateSignedUrl = async (req, res) => {
@@ -38,4 +37,3 @@ exports.generateSignedUrl = async (req, res) => {
       .json({ error: "生成 Signed URL 失敗", details: error.message });
   }
 };
-console.log("GCLOUD_KEYFILE:", process.env.GCLOUD_KEYFILE);
