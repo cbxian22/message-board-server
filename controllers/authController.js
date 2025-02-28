@@ -16,6 +16,49 @@ if (!ACCESS_TOKEN_SECRET || !REFRESH_TOKEN_SECRET) {
 }
 
 // 登入
+// exports.login = async (req, res) => {
+//   const { account, password, role } = req.body;
+
+//   try {
+//     db.query(
+//       "SELECT * FROM users WHERE account = ?",
+//       [account],
+//       async (err, results) => {
+//         if (err) return res.status(500).json({ message: "伺服器錯誤" });
+//         if (results.length === 0)
+//           return res.status(400).json({ message: "帳號或密碼錯誤" });
+
+//         const user = results[0];
+//         const isMatch = await bcrypt.compare(password, user.password);
+//         if (!isMatch)
+//           return res.status(400).json({ message: "帳號或密碼錯誤" });
+//         if (role !== user.role)
+//           return res.status(403).json({ message: "角色驗證失敗" });
+
+//         const accessToken = jwt.sign({ userId: user.id }, ACCESS_TOKEN_SECRET, {
+//           expiresIn: "15m",
+//         });
+//         const refreshToken = jwt.sign(
+//           { userId: user.id },
+//           REFRESH_TOKEN_SECRET,
+//           { expiresIn: "7d" }
+//         );
+
+//         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+//         db.query(
+//           "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
+//           [user.id, refreshToken, expiresAt],
+//           (err) => {
+//             if (err) return res.status(500).json({ message: "伺服器錯誤" });
+//             res.status(200).json({ success: true, accessToken, refreshToken });
+//           }
+//         );
+//       }
+//     );
+//   } catch (error) {
+//     res.status(500).json({ message: "伺服器錯誤" });
+//   }
+// };
 exports.login = async (req, res) => {
   const { account, password, role } = req.body;
 
@@ -44,15 +87,44 @@ exports.login = async (req, res) => {
           { expiresIn: "7d" }
         );
 
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        // 檢查現有 token 數量
         db.query(
-          "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
-          [user.id, refreshToken, expiresAt],
-          (err) => {
+          "SELECT COUNT(*) as tokenCount FROM refresh_tokens WHERE user_id = ?",
+          [user.id],
+          (err, countResults) => {
             if (err) return res.status(500).json({ message: "伺服器錯誤" });
-            res.status(200).json({ success: true, accessToken, refreshToken });
+
+            const tokenCount = countResults[0].tokenCount;
+            if (tokenCount >= 2) {
+              // 刪除最早的 refreshToken
+              db.query(
+                "DELETE FROM refresh_tokens WHERE user_id = ? ORDER BY expires_at ASC LIMIT 1",
+                [user.id],
+                (err) => {
+                  if (err)
+                    return res.status(500).json({ message: "伺服器錯誤" });
+                  insertNewToken();
+                }
+              );
+            } else {
+              insertNewToken();
+            }
           }
         );
+
+        function insertNewToken() {
+          const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+          db.query(
+            "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
+            [user.id, refreshToken, expiresAt],
+            (err) => {
+              if (err) return res.status(500).json({ message: "伺服器錯誤" });
+              res
+                .status(200)
+                .json({ success: true, accessToken, refreshToken });
+            }
+          );
+        }
       }
     );
   } catch (error) {
@@ -111,6 +183,39 @@ exports.refreshToken = async (req, res) => {
       .json({ success: false, message: "無效的 refreshToken" });
   }
 };
+
+// 登出所有裝置
+exports.logoutAll = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    db.query(
+      "DELETE FROM refresh_tokens WHERE user_id = ?",
+      [userId],
+      (err, result) => {
+        if (err) {
+          console.error("刪除所有 refreshToken 失敗:", err);
+          return res
+            .status(500)
+            .json({ success: false, message: "伺服器錯誤" });
+        }
+        res.status(200).json({ success: true, message: "已從所有裝置登出" });
+      }
+    );
+  } catch (error) {
+    console.error("登出所有裝置處理失敗:", error);
+    return res.status(500).json({ success: false, message: "伺服器錯誤" });
+  }
+};
+
+// 定時清理過期 token
+const cleanupExpiredTokens = () => {
+  db.query("DELETE FROM refresh_tokens WHERE expires_at < NOW()", (err) => {
+    if (err) console.error("清理過期 refreshToken 失敗:", err);
+    else console.log("已清理過期的 refreshToken");
+  });
+};
+setInterval(cleanupExpiredTokens, 60 * 60 * 1000);
+cleanupExpiredTokens();
 
 // 登出 - 新增功能
 exports.logout = async (req, res) => {
