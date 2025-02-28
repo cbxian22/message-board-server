@@ -88,21 +88,18 @@ exports.rejectFriendRequest = (req, res) => {
       if (results[0].friend_id !== userId)
         return res.status(403).json({ message: "無權限拒絕此請求" });
 
-      db.query(
-        "UPDATE friends SET status = 'rejected' WHERE id = ?",
-        [requestId],
-        (err) => {
-          if (err) return res.status(500).json({ message: "伺服器錯誤" });
-          db.query(
-            "UPDATE notifications SET is_read = 1 WHERE related_id = ? AND type = 'friend_request'",
-            [requestId],
-            (err) => {
-              if (err) return res.status(500).json({ message: "伺服器錯誤" });
-              res.status(200).json({ message: "已拒絕好友請求" });
-            }
-          );
-        }
-      );
+      // 直接刪除好友請求記錄
+      db.query("DELETE FROM friends WHERE id = ?", [requestId], (err) => {
+        if (err) return res.status(500).json({ message: "伺服器錯誤" });
+        db.query(
+          "UPDATE notifications SET is_read = 1 WHERE related_id = ? AND type = 'friend_request'",
+          [requestId],
+          (err) => {
+            if (err) return res.status(500).json({ message: "伺服器錯誤" });
+            res.status(200).json({ message: "已拒絕好友請求" });
+          }
+        );
+      });
     }
   );
 };
