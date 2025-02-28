@@ -7,6 +7,7 @@ const {
   deleteFriend,
   getFriends,
   getFriendStatus,
+  getPendingRequest,
 } = require("../controllers/friendController");
 const authMiddleware = require("../middleware/auth");
 const router = express.Router();
