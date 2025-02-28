@@ -213,13 +213,14 @@ exports.getFriends = (req, res) => {
   });
 };
 
+// controllers/friendController.js
 exports.getFriendStatus = (req, res) => {
   const { friendId } = req.params;
   const userId = req.user.userId;
 
   db.query(
-    "SELECT status FROM friends WHERE user_id = ? AND friend_id = ?",
-    [userId, friendId],
+    "SELECT status FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)",
+    [userId, friendId, friendId, userId],
     (err, results) => {
       if (err) {
         console.error("查詢好友狀態失敗:", err);
