@@ -6,6 +6,7 @@ const {
   rejectFriendRequest,
   deleteFriend,
   getFriends,
+  getFriendStatus,
 } = require("../controllers/friendController");
 const authMiddleware = require("../middleware/auth");
 const router = express.Router();
@@ -15,5 +16,6 @@ router.put("/accept/:requestId", authMiddleware, acceptFriendRequest);
 router.put("/reject/:requestId", authMiddleware, rejectFriendRequest);
 router.delete("/:friendId", authMiddleware, deleteFriend);
 router.get("/", authMiddleware, getFriends);
+router.get("/status/:friendId", authMiddleware, getFriendStatus);
 
 module.exports = router;
