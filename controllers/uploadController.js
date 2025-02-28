@@ -1,5 +1,5 @@
 const { Storage } = require("@google-cloud/storage");
-const credeㄈntials = JSON.parse(process.env.GCLOUD_KEYFILE);
+const credentials = JSON.parse(process.env.GCLOUD_KEYFILE);
 const storage = new Storage({
   projectId: process.env.GCLOUD_PROJECT_ID,
   credentials: credentials,
