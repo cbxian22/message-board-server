@@ -17,5 +17,6 @@ router.put("/reject/:requestId", authMiddleware, rejectFriendRequest);
 router.delete("/:friendId", authMiddleware, deleteFriend);
 router.get("/", authMiddleware, getFriends);
 router.get("/status/:friendId", authMiddleware, getFriendStatus);
+router.get("/pending/:friendId", authMiddleware, getPendingRequest);
 
 module.exports = router;

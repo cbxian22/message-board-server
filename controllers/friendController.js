@@ -213,13 +213,12 @@ exports.getFriends = (req, res) => {
   });
 };
 
-// controllers/friendController.js
 exports.getFriendStatus = (req, res) => {
   const { friendId } = req.params;
   const userId = req.user.userId;
 
   db.query(
-    "SELECT status FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)",
+    "SELECT status, user_id FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)",
     [userId, friendId, friendId, userId],
     (err, results) => {
       if (err) {
@@ -227,9 +226,31 @@ exports.getFriendStatus = (req, res) => {
         return res.status(500).json({ message: "伺服器錯誤" });
       }
       if (results.length > 0) {
-        return res.status(200).json({ status: results[0].status });
+        const isSender = results[0].user_id === userId;
+        return res.status(200).json({ status: results[0].status, isSender });
       }
-      return res.status(200).json({ status: null }); // 無記錄表示未發送請求
+      return res.status(200).json({ status: null, isSender: null });
+    }
+  );
+};
+
+// controllers/friendController.js
+exports.getPendingRequest = (req, res) => {
+  const { friendId } = req.params;
+  const userId = req.user.userId;
+
+  db.query(
+    "SELECT id FROM friends WHERE user_id = ? AND friend_id = ? AND status = 'pending'",
+    [friendId, userId],
+    (err, results) => {
+      if (err) {
+        console.error("查詢待處理請求失敗:", err);
+        return res.status(500).json({ message: "伺服器錯誤" });
+      }
+      if (results.length === 0) {
+        return res.status(404).json({ message: "無待處理的好友請求" });
+      }
+      return res.status(200).json({ requestId: results[0].id });
     }
   );
 };
