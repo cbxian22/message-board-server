@@ -1,6 +1,45 @@
 // controllers/friendController.js
 const db = require("../config/db");
 
+// exports.sendFriendRequest = (req, res) => {
+//   const { friendId } = req.body;
+//   const userId = req.user.userId;
+
+//   db.query("SELECT * FROM users WHERE id = ?", [friendId], (err, results) => {
+//     if (err) return res.status(500).json({ message: "伺服器錯誤" });
+//     if (results.length === 0)
+//       return res.status(404).json({ message: "用戶不存在" });
+
+//     db.query(
+//       "SELECT * FROM friends WHERE user_id = ? AND friend_id = ?",
+//       [userId, friendId],
+//       (err, existing) => {
+//         if (err) return res.status(500).json({ message: "伺服器錯誤" });
+//         if (existing.length > 0)
+//           return res.status(400).json({ message: "已存在好友請求或關係" });
+
+//         db.query(
+//           "INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, 'pending')",
+//           [userId, friendId],
+//           (err, result) => {
+//             if (err) return res.status(500).json({ message: "伺服器錯誤" });
+//             const requestId = result.insertId;
+
+//             // 插入通知
+//             db.query(
+//               "INSERT INTO notifications (user_id, type, related_id) VALUES (?, 'friend_request', ?)",
+//               [friendId, requestId],
+//               (err) => {
+//                 if (err) return res.status(500).json({ message: "伺服器錯誤" });
+//                 res.status(201).json({ message: "好友請求已發送", requestId });
+//               }
+//             );
+//           }
+//         );
+//       }
+//     );
+//   });
+// };
 exports.sendFriendRequest = (req, res) => {
   const { friendId } = req.body;
   const userId = req.user.userId;
@@ -15,27 +54,55 @@ exports.sendFriendRequest = (req, res) => {
       [userId, friendId],
       (err, existing) => {
         if (err) return res.status(500).json({ message: "伺服器錯誤" });
-        if (existing.length > 0)
-          return res.status(400).json({ message: "已存在好友請求或關係" });
 
-        db.query(
-          "INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, 'pending')",
-          [userId, friendId],
-          (err, result) => {
-            if (err) return res.status(500).json({ message: "伺服器錯誤" });
-            const requestId = result.insertId;
+        if (existing.length > 0) {
+          // 如果已經存在記錄，檢查狀態
+          const status = existing[0].status;
+          const requestId = existing[0].id;
 
-            // 插入通知
-            db.query(
-              "INSERT INTO notifications (user_id, type, related_id) VALUES (?, 'friend_request', ?)",
-              [friendId, requestId],
-              (err) => {
-                if (err) return res.status(500).json({ message: "伺服器錯誤" });
-                res.status(201).json({ message: "好友請求已發送", requestId });
-              }
-            );
+          if (status === "pending") {
+            // 如果是 pending，刪除該記錄（取消好友請求）
+            db.query("DELETE FROM friends WHERE id = ?", [requestId], (err) => {
+              if (err) return res.status(500).json({ message: "伺服器錯誤" });
+              // 同時更新通知為已讀（可選）
+              db.query(
+                "UPDATE notifications SET is_read = 1 WHERE related_id = ? AND type = 'friend_request'",
+                [requestId],
+                (err) => {
+                  if (err)
+                    return res.status(500).json({ message: "伺服器錯誤" });
+                  res.status(200).json({ message: "已取消好友請求" });
+                }
+              );
+            });
+          } else {
+            // 如果狀態不是 pending（例如 accepted），返回錯誤
+            return res.status(400).json({ message: "已存在好友關係" });
           }
-        );
+        } else {
+          // 如果不存在記錄，發送新的好友請求
+          db.query(
+            "INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, 'pending')",
+            [userId, friendId],
+            (err, result) => {
+              if (err) return res.status(500).json({ message: "伺服器錯誤" });
+              const requestId = result.insertId;
+
+              // 插入通知
+              db.query(
+                "INSERT INTO notifications (user_id, type, related_id) VALUES (?, 'friend_request', ?)",
+                [friendId, requestId],
+                (err) => {
+                  if (err)
+                    return res.status(500).json({ message: "伺服器錯誤" });
+                  res
+                    .status(201)
+                    .json({ message: "好友請求已發送", requestId });
+                }
+              );
+            }
+          );
+        }
       }
     );
   });
