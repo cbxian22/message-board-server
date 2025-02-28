@@ -15,6 +15,6 @@ router.get("/me", authMiddleware, getCurrentUser);
 router.post("/register", register);
 router.post("/logout", logout);
 router.post("/refresh-token", refreshToken);
-router.post("/logout-all", authenticateToken, logoutAll);
+router.post("/logout-all", authMiddleware, logoutAll);
 
 module.exports = router;
