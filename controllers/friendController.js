@@ -179,13 +179,20 @@ exports.deleteFriend = (req, res) => {
     "SELECT * FROM friends WHERE status = 'accepted' AND ((user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?))",
     [userId, friendId, friendId, userId],
     (err, results) => {
-      if (err) return res.status(500).json({ message: "伺服器錯誤" });
-      if (results.length === 0)
+      if (err) {
+        console.error("查詢好友關係失敗:", err);
+        return res.status(500).json({ message: "伺服器錯誤" });
+      }
+      if (results.length === 0) {
         return res.status(404).json({ message: "好友關係不存在" });
+      }
 
       db.query("DELETE FROM friends WHERE id = ?", [results[0].id], (err) => {
-        if (err) return res.status(500).json({ message: "伺服器錯誤" });
-        res.status(200).json({ message: "已刪除好友" });
+        if (err) {
+          console.error("解除好友失敗:", err);
+          return res.status(500).json({ message: "伺服器錯誤" });
+        }
+        res.status(200).json({ message: "已解除好友" });
       });
     }
   );
