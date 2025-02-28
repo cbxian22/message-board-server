@@ -1,35 +1,43 @@
-const mysql = require("mysql2/promise");
+const mysql = require("mysql2");
 require("dotenv").config();
 
-// 建立連線池
 const db = mysql.createPool({
+  connectionLimit: 20, // 允許最多 20 個連線
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
-  connectionLimit: 20,
-  waitForConnections: true,
-  connectTimeout: 10000,
+  waitForConnections: true, // 如果沒有可用連線，等待連線釋放
+  queueLimit: 0, // 0 表示無限等待請求
+  connectTimeout: 10000, // **設定 10 秒連線超時**
+  enableKeepAlive: true, // **保持 MySQL 連線活躍**
+  keepAliveInitialDelay: 10000, // **每 10 秒發送 Keep-Alive**
 });
 
-// 測試連線（啟動時跑一次）
-db.getConnection()
-  .then((connection) => {
-    console.log("已成功連線到資料庫");
-    connection.release();
-  })
-  .catch((err) => console.error("資料庫連線錯誤:", err));
+// 測試連線
+db.getConnection((err, connection) => {
+  if (err) {
+    console.error("資料庫連線錯誤: ", err);
+    return;
+  }
+  console.log("已成功連線到資料庫");
+  connection.release(); // 測試完畢後釋放連線
+});
 
-// 週期性 Ping
 function pingMySQL() {
-  db.query("SELECT 1")
-    .then(() => console.log("MySQL 週期性每5分鐘 ping 一次"))
-    .catch((err) => console.error("MySQL 週期性每5分鐘 ping 一次失敗:", err));
+  console.log(`⏳ [${new Date().toISOString()}] 測試 Ping MySQL...`);
+  db.query("SELECT 1", (err) => {
+    if (err) {
+      console.error("❌ MySQL Ping 失敗:", err);
+    } else {
+      console.log(`✅ [${new Date().toISOString()}] MySQL 仍然活躍`);
+    }
+  });
+
+  setTimeout(pingMySQL, 300000); // 10 秒後再執行
 }
 
-// 每 5 分鐘 ping 一次
-setInterval(pingMySQL, 300000);
-pingMySQL();
+pingMySQL(); // 啟動函數
 
 module.exports = db;

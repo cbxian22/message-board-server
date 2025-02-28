@@ -88,6 +88,17 @@ app.use(bodyParser.json());
 app.use(requestLogger);
 app.use(errorMiddleware);
 
+// **新增 `/healthz` API，讓 Render 保持活躍**
+app.get("/healthz", (req, res) => {
+  db.query("SELECT 1", (err) => {
+    if (err) {
+      res.status(500).send("Render 保持活躍失敗");
+    } else {
+      res.send("render 保持活躍");
+    }
+  });
+});
+
 // 路由設定
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
