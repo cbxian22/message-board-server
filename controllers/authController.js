@@ -301,6 +301,35 @@ setInterval(cleanupExpiredTokens, 60 * 60 * 1000); // 每小時執行一次
 cleanupExpiredTokens(); // 啟動時執行一次
 
 // 登出
+// exports.logout = async (req, res) => {
+//   const { refreshToken } = req.body;
+
+//   if (!refreshToken) {
+//     return res
+//       .status(400)
+//       .json({ success: false, message: "缺少 refreshToken" });
+//   }
+
+//   try {
+//     console.log("收到登出請求，refreshToken:", refreshToken); // 添加日誌
+//     const result = await query("DELETE FROM refresh_tokens WHERE token = ?", [
+//       refreshToken,
+//     ]);
+
+//     if (result.affectedRows === 0) {
+//       console.warn("未找到匹配的 refreshToken:", refreshToken);
+//       return res
+//         .status(200)
+//         .json({ success: true, message: "令牌不存在，已登出" });
+//     }
+
+//     console.log("成功刪除 refreshToken:", refreshToken);
+//     res.status(200).json({ success: true, message: "已登出" });
+//   } catch (error) {
+//     console.error("登出處理失敗:", error);
+//     res.status(500).json({ success: false, message: "伺服器錯誤" });
+//   }
+// };
 exports.logout = async (req, res) => {
   const { refreshToken } = req.body;
 
@@ -310,24 +339,46 @@ exports.logout = async (req, res) => {
       .json({ success: false, message: "缺少 refreshToken" });
   }
 
+  let connection;
   try {
-    console.log("收到登出請求，refreshToken:", refreshToken); // 添加日誌
-    const result = await query("DELETE FROM refresh_tokens WHERE token = ?", [
-      refreshToken,
-    ]);
+    console.log("收到登出請求，refreshToken:", refreshToken);
+
+    // 從連接池中獲取獨立連線
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    // 執行刪除操作
+    const result = await connection.query(
+      "DELETE FROM refresh_tokens WHERE token = ?",
+      [refreshToken]
+    );
 
     if (result.affectedRows === 0) {
       console.warn("未找到匹配的 refreshToken:", refreshToken);
+      await connection.commit();
       return res
         .status(200)
         .json({ success: true, message: "令牌不存在，已登出" });
     }
 
-    console.log("成功刪除 refreshToken:", refreshToken);
+    await connection.commit();
+    console.log(
+      "成功刪除 refreshToken:",
+      refreshToken,
+      "影響行數:",
+      result.affectedRows
+    );
     res.status(200).json({ success: true, message: "已登出" });
   } catch (error) {
-    console.error("登出處理失敗:", error);
+    if (connection) {
+      await connection.rollback();
+      console.error("登出處理失敗，回滾事務:", error);
+    } else {
+      console.error("登出處理失敗，無法獲取連線:", error);
+    }
     res.status(500).json({ success: false, message: "伺服器錯誤" });
+  } finally {
+    if (connection) connection.release();
   }
 };
 
