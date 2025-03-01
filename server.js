@@ -14,7 +14,7 @@ const friendRoutes = require("./routes/friendRoutes");
 
 const errorMiddleware = require("./middleware/errorMiddleware");
 const requestLogger = require("./middleware/requestLogger");
-const { initializeWebSocket } = require("./websocket");
+const { initializeWebSocket } = require("./config/websocket");
 
 const db = require("./config/db");
 

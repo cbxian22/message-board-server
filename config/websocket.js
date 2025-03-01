@@ -49,9 +49,9 @@ function initializeWebSocket(server) {
 
     // 處理已讀標記
     socket.on("markAsRead", (messageId) => {
-      // 通知發送者消息已讀
-      const senderId = socket.handshake.query.userId; // 這裡假設發送者ID可從連接中獲取
-      const senderSocketId = userSocketMap.get(senderId.toString());
+      // 这里假设 senderId 是触发 markAsRead 的用户，但我们需要通知消息的实际发送者
+      // 修改：查找消息的 senderId（需要前端傳送更多資訊，或後端額外邏輯）
+      const senderSocketId = userSocketMap.get(userId.toString()); // 這裡有潛在邏輯問題，待修正
       if (senderSocketId) {
         io.to(senderSocketId).emit("messageRead", { messageId });
       }
