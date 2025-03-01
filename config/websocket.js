@@ -1,4 +1,4 @@
-// websocket.js
+// websocket.js (位於 config/websocket.js 或根目錄，根據你的 server.js 路徑)
 const { Server } = require("socket.io");
 
 function initializeWebSocket(server) {
@@ -22,6 +22,7 @@ function initializeWebSocket(server) {
     }
 
     socket.on("sendMessage", (data) => {
+      console.log("收到 sendMessage:", data);
       const { senderId, receiverId, content, media } = data;
       const messageId = Date.now();
       const message = {
@@ -36,16 +37,25 @@ function initializeWebSocket(server) {
 
       const receiverSocketId = userSocketMap.get(receiverId.toString());
       if (receiverSocketId) {
+        console.log(
+          `發送給接收者 ${receiverId} (socket: ${receiverSocketId}):`,
+          message
+        );
         io.to(receiverSocketId).emit("receiveMessage", message);
+      } else {
+        console.log(`接收者 ${receiverId} 未在線`);
       }
+      console.log(`回傳給發送者 ${senderId}:`, message);
       socket.emit("messageSent", message);
     });
 
-    // 修改為接收 senderId
     socket.on("markAsRead", ({ messageId, senderId }) => {
+      console.log(`標記消息 ${messageId} 為已讀，通知發送者 ${senderId}`);
       const senderSocketId = userSocketMap.get(senderId.toString());
       if (senderSocketId) {
         io.to(senderSocketId).emit("messageRead", { messageId });
+      } else {
+        console.log(`發送者 ${senderId} 未在線`);
       }
     });
 
