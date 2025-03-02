@@ -1,4 +1,4 @@
-// // websocket.js
+// // websocket.js // line version
 // const { Server } = require("socket.io");
 
 // function initializeWebSocket(server) {
@@ -10,23 +10,40 @@
 //     },
 //   });
 
-//   const userSocketMap = new Map();
-//   const offlineMessages = new Map(); // 儲存離線消息，key: receiverId, value: [message]
+//   const userSocketMap = new Map(); // key: userId, value: [socketId]
+//   const tempMessages = new Map(); // key: userId, value: [{ message, timestamp }]
+//   const EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 小時（毫秒）
+
+//   // 定時清理過期消息（每小時檢查一次）
+//   setInterval(() => {
+//     const now = Date.now();
+//     tempMessages.forEach((messages, userId) => {
+//       const filtered = messages.filter(
+//         (entry) => now - entry.timestamp < EXPIRY_TIME
+//       );
+//       if (filtered.length > 0) {
+//         tempMessages.set(userId, filtered);
+//       } else {
+//         tempMessages.delete(userId);
+//       }
+//     });
+//     console.log("清理過期消息後，tempMessages:", tempMessages);
+//   }, 60 * 60 * 1000); // 每小時
 
 //   io.on("connection", (socket) => {
 //     console.log("用戶已連接:", socket.id);
 
 //     const userId = socket.handshake.query.userId;
 //     if (userId) {
-//       userSocketMap.set(userId, socket.id);
+//       if (!userSocketMap.has(userId)) userSocketMap.set(userId, []);
+//       userSocketMap.get(userId).push(socket.id);
 //       console.log(`用戶 ${userId} 已綁定 socket ${socket.id}`);
 
-//       // 推送離線消息
-//       if (offlineMessages.has(userId)) {
-//         const messages = offlineMessages.get(userId);
-//         console.log(`推送離線消息給 ${userId}:`, messages);
-//         socket.emit("offlineMessages", messages);
-//         offlineMessages.delete(userId); // 推送後清除
+//       // 推送短期同步消息
+//       if (tempMessages.has(userId)) {
+//         const messages = tempMessages.get(userId).map((entry) => entry.message);
+//         console.log(`推送短期同步消息給 ${userId}:`, messages);
+//         socket.emit("syncMessages", messages);
 //       }
 //     }
 
@@ -41,41 +58,49 @@
 //         content,
 //         media,
 //         isRead: false,
-//         createdAt: new Date(),
+//         createdAt: new Date().toISOString(),
 //       };
 
-//       const receiverSocketId = userSocketMap.get(receiverId.toString());
-//       if (receiverSocketId) {
+//       // 儲存到臨時記憶體
+//       const timestamp = Date.now();
+//       if (!tempMessages.has(senderId)) tempMessages.set(senderId, []);
+//       if (!tempMessages.has(receiverId)) tempMessages.set(receiverId, []);
+//       tempMessages.get(senderId).push({ message, timestamp });
+//       tempMessages.get(receiverId).push({ message, timestamp });
+
+//       const receiverSocketIds = userSocketMap.get(receiverId.toString()) || [];
+//       receiverSocketIds.forEach((socketId) => {
 //         console.log(
-//           `發送給接收者 ${receiverId} (socket: ${receiverSocketId}):`,
+//           `發送給接收者 ${receiverId} (socket: ${socketId}):`,
 //           message
 //         );
-//         io.to(receiverSocketId).emit("receiveMessage", message);
-//       } else {
-//         console.log(`接收者 ${receiverId} 未在線，儲存離線消息`);
-//         if (!offlineMessages.has(receiverId)) {
-//           offlineMessages.set(receiverId, []);
-//         }
-//         offlineMessages.get(receiverId).push(message);
-//       }
-//       console.log(`回傳給發送者 ${senderId}:`, message);
-//       socket.emit("messageSent", message);
+//         io.to(socketId).emit("receiveMessage", message);
+//       });
+
+//       const senderSocketIds = userSocketMap.get(senderId.toString()) || [];
+//       senderSocketIds.forEach((socketId) => {
+//         console.log(`回傳給發送者 ${senderId} (socket: ${socketId}):`, message);
+//         io.to(socketId).emit("messageSent", message);
+//       });
 //     });
 
 //     socket.on("markAsRead", ({ messageId, senderId }) => {
 //       console.log(`標記消息 ${messageId} 為已讀，通知發送者 ${senderId}`);
-//       const senderSocketId = userSocketMap.get(senderId.toString());
-//       if (senderSocketId) {
-//         console.log(`通知發送者 ${senderId} (socket: ${senderSocketId}) 已讀`);
-//         io.to(senderSocketId).emit("messageRead", { messageId });
-//       } else {
-//         console.log(`發送者 ${senderId} 未在線`);
-//       }
+//       const senderSocketIds = userSocketMap.get(senderId.toString()) || [];
+//       senderSocketIds.forEach((socketId) => {
+//         console.log(`通知發送者 ${senderId} (socket: ${socketId}) 已讀`);
+//         io.to(socketId).emit("messageRead", { messageId });
+//       });
 //     });
 
 //     socket.on("disconnect", () => {
 //       console.log("用戶斷開連接:", socket.id);
-//       userSocketMap.delete(userId);
+//       if (userId && userSocketMap.has(userId)) {
+//         const sockets = userSocketMap.get(userId);
+//         const index = sockets.indexOf(socket.id);
+//         if (index > -1) sockets.splice(index, 1);
+//         if (sockets.length === 0) userSocketMap.delete(userId);
+//       }
 //     });
 //   });
 
@@ -84,7 +109,7 @@
 
 // module.exports = { initializeWebSocket };
 
-// websocket.js // line version
+// websocket.js // version2
 const { Server } = require("socket.io");
 
 function initializeWebSocket(server) {
@@ -98,9 +123,8 @@ function initializeWebSocket(server) {
 
   const userSocketMap = new Map(); // key: userId, value: [socketId]
   const tempMessages = new Map(); // key: userId, value: [{ message, timestamp }]
-  const EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 小時（毫秒）
+  const EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 小時
 
-  // 定時清理過期消息（每小時檢查一次）
   setInterval(() => {
     const now = Date.now();
     tempMessages.forEach((messages, userId) => {
@@ -114,7 +138,7 @@ function initializeWebSocket(server) {
       }
     });
     console.log("清理過期消息後，tempMessages:", tempMessages);
-  }, 60 * 60 * 1000); // 每小時
+  }, 60 * 60 * 1000);
 
   io.on("connection", (socket) => {
     console.log("用戶已連接:", socket.id);
@@ -125,7 +149,6 @@ function initializeWebSocket(server) {
       userSocketMap.get(userId).push(socket.id);
       console.log(`用戶 ${userId} 已綁定 socket ${socket.id}`);
 
-      // 推送短期同步消息
       if (tempMessages.has(userId)) {
         const messages = tempMessages.get(userId).map((entry) => entry.message);
         console.log(`推送短期同步消息給 ${userId}:`, messages);
@@ -147,7 +170,6 @@ function initializeWebSocket(server) {
         createdAt: new Date().toISOString(),
       };
 
-      // 儲存到臨時記憶體
       const timestamp = Date.now();
       if (!tempMessages.has(senderId)) tempMessages.set(senderId, []);
       if (!tempMessages.has(receiverId)) tempMessages.set(receiverId, []);
@@ -177,6 +199,18 @@ function initializeWebSocket(server) {
         console.log(`通知發送者 ${senderId} (socket: ${socketId}) 已讀`);
         io.to(socketId).emit("messageRead", { messageId });
       });
+
+      // 更新 tempMessages 中的已讀狀態
+      if (tempMessages.has(senderId)) {
+        const messages = tempMessages.get(senderId);
+        const msgEntry = messages.find(
+          (entry) => entry.message.id === messageId
+        );
+        if (msgEntry) {
+          msgEntry.message.isRead = true;
+          console.log(`更新 tempMessages 中消息 ${messageId} 為已讀`);
+        }
+      }
     });
 
     socket.on("disconnect", () => {
