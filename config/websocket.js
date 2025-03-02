@@ -207,11 +207,15 @@ function initializeWebSocket(server) {
         );
         if (msgEntry) {
           msgEntry.message.isRead = true;
+          console.log(
+            `更新消息 ${messageId} 的 isRead 為 true 在 user ${userId} 的 tempMessages 中`
+          );
         }
       });
 
       // 通知發送者的所有設備
       const senderSocketIds = userSocketMap.get(senderId.toString()) || [];
+      console.log(`發送者 ${senderId} 的活動 socket:`, senderSocketIds);
       senderSocketIds.forEach((socketId) => {
         console.log(`通知發送者 ${senderId} (socket: ${socketId}) 已讀`);
         io.to(socketId).emit("messageRead", { messageId });
@@ -219,6 +223,7 @@ function initializeWebSocket(server) {
 
       // 通知接收者的所有設備
       const receiverSocketIds = userSocketMap.get(receiverId.toString()) || [];
+      console.log(`接收者 ${receiverId} 的活動 socket:`, receiverSocketIds);
       receiverSocketIds.forEach((socketId) => {
         console.log(`通知接收者 ${receiverId} (socket: ${socketId}) 已讀同步`);
         io.to(socketId).emit("messageRead", { messageId });
