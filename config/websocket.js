@@ -151,7 +151,6 @@ function initializeWebSocket(server) {
       userSocketMap.get(userId).push(socket.id);
       console.log(`用戶 ${userId} 已綁定 socket ${socket.id}`);
 
-      // 推送短期同步消息（包括已讀狀態）
       if (tempMessages.has(userId)) {
         const messages = tempMessages.get(userId).map((entry) => entry.message);
         console.log(`推送短期同步消息給 ${userId}:`, messages);
@@ -169,7 +168,7 @@ function initializeWebSocket(server) {
         receiverId,
         content,
         media,
-        isRead: false,
+        isRead: receiverId === userId && userSocketMap.has(receiverId), // 接收者在線時自動標記為已讀
         createdAt: new Date().toISOString(),
       };
 
@@ -193,6 +192,19 @@ function initializeWebSocket(server) {
         console.log(`回傳給發送者 ${senderId} (socket: ${socketId}):`, message);
         io.to(socketId).emit("messageSent", message);
       });
+
+      // 如果接收者在線，自動觸發已讀通知
+      if (receiverSocketIds.length > 0) {
+        console.log(
+          `接收者 ${receiverId} 在線，自動標記消息 ${messageId} 為已讀`
+        );
+        senderSocketIds.forEach((socketId) => {
+          io.to(socketId).emit("messageRead", { messageId });
+        });
+        receiverSocketIds.forEach((socketId) => {
+          io.to(socketId).emit("messageRead", { messageId });
+        });
+      }
     });
 
     socket.on("markAsRead", ({ messageId, senderId, receiverId }) => {
