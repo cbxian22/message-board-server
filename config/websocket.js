@@ -151,6 +151,7 @@ function initializeWebSocket(server) {
       userSocketMap.get(userId).push(socket.id);
       console.log(`用戶 ${userId} 已綁定 socket ${socket.id}`);
 
+      // 推送短期同步消息（包括已讀狀態）
       if (tempMessages.has(userId)) {
         const messages = tempMessages.get(userId).map((entry) => entry.message);
         console.log(`推送短期同步消息給 ${userId}:`, messages);
@@ -194,8 +195,10 @@ function initializeWebSocket(server) {
       });
     });
 
-    socket.on("markAsRead", ({ messageId, senderId }) => {
-      console.log(`標記消息 ${messageId} 為已讀，通知發送者 ${senderId}`);
+    socket.on("markAsRead", ({ messageId, senderId, receiverId }) => {
+      console.log(
+        `標記消息 ${messageId} 為已讀，通知發送者 ${senderId} 和接收者 ${receiverId}`
+      );
 
       // 更新 tempMessages 中的消息狀態
       tempMessages.forEach((messages, userId) => {
@@ -214,10 +217,10 @@ function initializeWebSocket(server) {
         io.to(socketId).emit("messageRead", { messageId });
       });
 
-      // 通知接收者的所有設備，同步已讀狀態
-      const receiverSocketIds = userSocketMap.get(userId.toString()) || [];
+      // 通知接收者的所有設備
+      const receiverSocketIds = userSocketMap.get(receiverId.toString()) || [];
       receiverSocketIds.forEach((socketId) => {
-        console.log(`通知接收者 ${userId} (socket: ${socketId}) 已讀同步`);
+        console.log(`通知接收者 ${receiverId} (socket: ${socketId}) 已讀同步`);
         io.to(socketId).emit("messageRead", { messageId });
       });
     });
