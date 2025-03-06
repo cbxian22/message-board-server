@@ -24,7 +24,7 @@
 const express = require("express");
 const router = express.Router();
 const replyController = require("../controllers/replyController");
-const authMiddleware = require("../middleware/authMiddleware");
+const authMiddleware = require("../middleware/auth");
 
 // 創建回覆（需要身份驗證）
 router.post("/:postId/:userId", authMiddleware, replyController.createReply);
