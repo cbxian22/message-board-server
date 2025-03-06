@@ -144,8 +144,7 @@ exports.createReply = (req, res) => {
 
   const { postId } = req.params;
   const userId = req.user.userId; // 從 token 獲取
-  const { content } = req.body;
-  const fileUrl = req.body.file_url || null;
+  const { content, fileUrl } = req.body;
 
   if (!content && !fileUrl) {
     return res.status(400).json({ error: "回覆內容和檔案URL不能同時為空" });
