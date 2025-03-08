@@ -166,11 +166,14 @@ exports.logout = async (req, res) => {
   }
 };
 
+// 註冊
 exports.register = async (req, res) => {
-  const { account, password, name, role } = req.body;
+  const { account, password, name, accountname, role } = req.body;
 
-  if (!account || !password || !name || !role) {
-    return res.status(400).json({ message: "請提供帳號、密碼、名稱和角色" });
+  if (!account || !password || !name || !accountname || !role) {
+    return res
+      .status(400)
+      .json({ message: "請提供帳號、密碼、名稱、用戶名稱和角色" });
   }
   if (!["admin", "user"].includes(role)) {
     return res.status(400).json({ message: "角色必須是 'admin' 或 'user'" });
@@ -185,13 +188,24 @@ exports.register = async (req, res) => {
         if (results.length > 0)
           return res.status(400).json({ message: "帳號已被註冊" });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // 檢查 accountname 是否已被使用
         db.query(
-          "INSERT INTO users (account, password, name, role, is_private) VALUES (?, ?, ?, ?, ?)",
-          [account, hashedPassword, name, role, false], // 新增 is_private
-          (err, result) => {
-            if (err) return res.status(500).json({ message: "註冊失敗" });
-            res.status(201).json({ success: true, message: "註冊成功" });
+          "SELECT * FROM users WHERE accountname = ?",
+          [accountname],
+          async (err, results) => {
+            if (err) return res.status(500).json({ message: "伺服器錯誤" });
+            if (results.length > 0)
+              return res.status(400).json({ message: "用戶名稱已被使用" });
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            db.query(
+              "INSERT INTO users (account, password, name, accountname, role, is_private) VALUES (?, ?, ?, ?, ?, ?)",
+              [account, hashedPassword, name, accountname, role, false],
+              (err, result) => {
+                if (err) return res.status(500).json({ message: "註冊失敗" });
+                res.status(201).json({ success: true, message: "註冊成功" });
+              }
+            );
           }
         );
       }
@@ -205,7 +219,7 @@ exports.register = async (req, res) => {
 exports.getCurrentUser = (req, res) => {
   const userId = req.user.userId;
   db.query(
-    "SELECT id, name, account, intro, avatar_url, role, is_private FROM users WHERE id = ?",
+    "SELECT id, name, account,accountname, intro, avatar_url, role, is_private FROM users WHERE id = ?",
     [userId],
     (err, results) => {
       if (err) return res.status(500).json({ message: "伺服器錯誤" });
