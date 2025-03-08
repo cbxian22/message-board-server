@@ -136,7 +136,7 @@ exports.getPostById = (req, res) => {
 };
 
 // // 获取指定用户名的所有帖子
-exports.getPostsByUsername = (req, res) => {
+exports.getPostsByAccountname = (req, res) => {
   const { accountname } = req.params;
   const userId = req.user ? req.user.userId : null;
 
