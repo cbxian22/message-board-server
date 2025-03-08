@@ -20,7 +20,7 @@ router.get("/:postId", authMiddleware, postController.getPostById);
 
 // 获取指定用户名的所有帖子
 // router.get("/user/:name", postController.getPostsByUsername);
-router.get("/user/:name", authMiddleware, postController.getPostsByUsername); // 添加 authMiddleware
+router.get("/user/:name", authMiddleware, postController.getPostsByAccountname); // 添加 authMiddleware
 
 // 修改帖子
 // router.put("/:postId/:userId", postController.updatePost);

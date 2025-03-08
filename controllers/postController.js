@@ -43,7 +43,7 @@ exports.getAllPosts = (req, res) => {
         p.updated_at, 
         p.file_url, 
         p.visibility,
-        u.name AS user_name, 
+        u.accountname AS account_name, 
         u.avatar_url AS user_avatar,
         u.is_private,
         (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
@@ -79,7 +79,7 @@ exports.getAllPosts = (req, res) => {
         p.updated_at, 
         p.file_url, 
         p.visibility,
-        u.name AS user_name, 
+        u.accountname AS account_name, 
         u.avatar_url AS user_avatar,
         u.is_private,
         (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
@@ -117,7 +117,7 @@ exports.getPostById = (req, res) => {
       p.created_at, 
       p.updated_at, 
       p.file_url, 
-      u.name AS user_name, 
+      u.accountname AS account_name, 
       u.avatar_url AS user_avatar,
       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
       EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
@@ -137,14 +137,19 @@ exports.getPostById = (req, res) => {
 
 // // 获取指定用户名的所有帖子
 exports.getPostsByUsername = (req, res) => {
-  const { name } = req.params;
+  const { accountname } = req.params;
   const userId = req.user ? req.user.userId : null;
 
   let query;
   let params;
 
   if (userId) {
-    console.log("登入用戶，個人頁面查詢，userId:", userId, "name:", name);
+    console.log(
+      "登入用戶，個人頁面查詢，userId:",
+      userId,
+      "accountname:",
+      accountname
+    );
     query = `
       SELECT 
         p.id, 
@@ -154,7 +159,7 @@ exports.getPostsByUsername = (req, res) => {
         p.updated_at, 
         p.file_url, 
         p.visibility,
-        u.name AS user_name, 
+        u.accountname AS account_name, 
         u.avatar_url AS user_avatar,
         u.is_private,
         (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
@@ -165,7 +170,7 @@ exports.getPostsByUsername = (req, res) => {
         )) AS is_friend
       FROM posts p
       JOIN users u ON p.user_id = u.id
-      WHERE u.name = ?
+      WHERE u.accountname = ?
       AND (
         (p.visibility = 'public' AND u.is_private = 0)
         OR p.user_id = ?
@@ -180,9 +185,9 @@ exports.getPostsByUsername = (req, res) => {
       )
       ORDER BY p.updated_at DESC
     `;
-    params = [userId, userId, userId, name, userId, userId, userId];
+    params = [userId, userId, userId, accountname, userId, userId, userId];
   } else {
-    console.log("未登入用戶，個人頁面查詢，name:", name);
+    console.log("未登入用戶，個人頁面查詢，accountname:", accountname);
     query = `
       SELECT 
         p.id, 
@@ -192,7 +197,7 @@ exports.getPostsByUsername = (req, res) => {
         p.updated_at, 
         p.file_url, 
         p.visibility,
-        u.name AS user_name, 
+        u.accountname AS account_name,  
         u.avatar_url AS user_avatar,
         u.is_private,
         (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
@@ -200,11 +205,11 @@ exports.getPostsByUsername = (req, res) => {
         (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
       FROM posts p
       JOIN users u ON p.user_id = u.id
-      WHERE u.name = ?
+      WHERE u.accountname = ?
       AND p.visibility = 'public' AND u.is_private = 0
       ORDER BY p.updated_at DESC
     `;
-    params = [name];
+    params = [accountname];
   }
 
   db.query(query, params, (err, results) => {
@@ -233,7 +238,7 @@ exports.getFriendsPosts = (req, res) => {
       p.updated_at, 
       p.file_url, 
       p.visibility,
-      u.name AS user_name, 
+      u.accountname AS account_name, 
       u.avatar_url AS user_avatar,
       u.is_private,
       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
