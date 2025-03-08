@@ -32,7 +32,7 @@ exports.getAllReplies = (req, res) => {
     SELECT 
       r.id, r.post_id, r.content, r.user_id, 
       r.created_at, r.updated_at, r.file_url,
-      u.accountname AS replies_name,
+      u.accountname AS user_name,
       u.avatar_url AS user_avatar,
       (SELECT COUNT(*) FROM likes WHERE target_type = 'reply' AND target_id = r.id) AS likes,
       EXISTS(SELECT 1 FROM likes WHERE target_type = 'reply' AND target_id = r.id AND user_id = ?) AS user_liked
