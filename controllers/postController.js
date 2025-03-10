@@ -105,39 +105,9 @@ exports.getAllPosts = (req, res) => {
 };
 
 // 获取单一帖子
-// exports.getPostById = (req, res) => {
-//   const { postId } = req.params;
-//   const userId = req.query.userId || null; // 從查詢參數獲取當前用戶 ID
-
-//   const query = `
-//     SELECT
-//       p.id,
-//       p.content,
-//       p.user_id,
-//       p.created_at,
-//       p.updated_at,
-//       p.file_url,
-//       u.accountname AS user_name,
-//       u.avatar_url AS user_avatar,
-//       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
-//       EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
-//       (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
-//     FROM posts p
-//     JOIN users u ON p.user_id = u.id
-//     WHERE p.id = ?
-//   `;
-//   db.query(query, [userId, postId], (err, result) => {
-//     if (err || result.length === 0) {
-//       console.error("数据库错误或找不到帖子: ", err);
-//       return res.status(404).json({ error: "帖子未找到", details: err });
-//     }
-//     res.status(200).json(result[0]);
-//   });
-// };
-// 获取单一帖子
 exports.getPostById = (req, res) => {
   const { postId } = req.params;
-  const userId = req.query.userId || null; // 從查詢參數獲取當前用戶 ID
+  const userId = req.user ? req.user.userId : null;
 
   // 驗證 postId
   if (!postId || isNaN(postId)) {
