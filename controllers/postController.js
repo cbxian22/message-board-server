@@ -105,6 +105,102 @@ exports.getAllPosts = (req, res) => {
 };
 
 // 获取单一帖子
+// exports.getPostById = (req, res) => {
+//   const { postId } = req.params;
+//   const userId = req.user ? req.user.userId : null;
+
+//   // 驗證 postId
+//   if (!postId || isNaN(postId)) {
+//     return res.status(400).json({ error: "無效的貼文 ID" });
+//   }
+
+//   const query = `
+//     SELECT
+//       p.id,
+//       p.content,
+//       p.user_id,
+//       p.created_at,
+//       p.updated_at,
+//       p.file_url,
+//       p.visibility,
+//       u.accountname AS user_name,
+//       u.avatar_url AS user_avatar,
+//       u.is_private,
+//       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
+//       EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
+//       (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
+//     FROM posts p
+//     JOIN users u ON p.user_id = u.id
+//     WHERE p.id = ?
+//   `;
+
+//   db.query(query, [userId, postId], (err, result) => {
+//     if (err) {
+//       console.error("資料庫錯誤 - 獲取單一貼文: ", err);
+//       return res.status(500).json({ error: "伺服器內部錯誤" });
+//     }
+//     if (result.length === 0) {
+//       return res.status(404).json({ error: "帖子未找到" });
+//     }
+
+//     const post = result[0];
+
+//     // 權限檢查
+//     const isOwner = userId && parseInt(userId) === post.user_id;
+//     const isPublic = post.visibility === "public" && !post.is_private;
+
+//     // 如果未登入，只能看公開且非私人帳戶的貼文
+//     if (!userId) {
+//       if (!isPublic) {
+//         return res.status(403).json({ error: "無權查看此貼文" });
+//       }
+//       return res.status(200).json(post);
+//     }
+
+//     // 已登入用戶的權限檢查
+//     if (isOwner) {
+//       // 作者本人可以查看所有自己的貼文（包括 private）
+//       return res.status(200).json(post);
+//     }
+
+//     if (post.visibility === "private") {
+//       return res.status(403).json({ error: "無權查看此私人貼文" });
+//     }
+
+//     if (post.visibility === "friends") {
+//       // 檢查是否為好友
+//       const friendCheckQuery = `
+//         SELECT 1
+//         FROM friends
+//         WHERE status = 'accepted'
+//         AND (
+//           (user_id = ? AND friend_id = ?)
+//           OR (friend_id = ? AND user_id = ?)
+//         )
+//         LIMIT 1
+//       `;
+//       db.query(
+//         friendCheckQuery,
+//         [userId, post.user_id, userId, post.user_id],
+//         (friendErr, friendResult) => {
+//           if (friendErr) {
+//             console.error("資料庫錯誤 - 檢查好友關係: ", friendErr);
+//             return res.status(500).json({ error: "伺服器內部錯誤" });
+//           }
+//           if (friendResult.length === 0) {
+//             return res.status(403).json({ error: "無權查看此好友貼文" });
+//           }
+//           res.status(200).json(post);
+//         }
+//       );
+//     } else if (isPublic) {
+//       // 公開貼文且非私人帳戶，所有人都可見
+//       res.status(200).json(post);
+//     } else {
+//       return res.status(403).json({ error: "無權查看此貼文" });
+//     }
+//   });
+// };
 exports.getPostById = (req, res) => {
   const { postId } = req.params;
   const userId = req.user ? req.user.userId : null;
@@ -144,12 +240,10 @@ exports.getPostById = (req, res) => {
     }
 
     const post = result[0];
-
-    // 權限檢查
     const isOwner = userId && parseInt(userId) === post.user_id;
     const isPublic = post.visibility === "public" && !post.is_private;
 
-    // 如果未登入，只能看公開且非私人帳戶的貼文
+    // 未登入用戶：只能看公開且非私人帳戶的貼文
     if (!userId) {
       if (!isPublic) {
         return res.status(403).json({ error: "無權查看此貼文" });
@@ -157,18 +251,19 @@ exports.getPostById = (req, res) => {
       return res.status(200).json(post);
     }
 
-    // 已登入用戶的權限檢查
+    // 已登入用戶權限檢查
     if (isOwner) {
-      // 作者本人可以查看所有自己的貼文（包括 private）
+      // 作者本人可以看到自己的所有貼文
       return res.status(200).json(post);
     }
 
     if (post.visibility === "private") {
+      // 私人貼文只有作者可見
       return res.status(403).json({ error: "無權查看此私人貼文" });
     }
 
     if (post.visibility === "friends") {
-      // 檢查是否為好友
+      // 檢查好友關係
       const friendCheckQuery = `
         SELECT 1 
         FROM friends 
@@ -190,13 +285,15 @@ exports.getPostById = (req, res) => {
           if (friendResult.length === 0) {
             return res.status(403).json({ error: "無權查看此好友貼文" });
           }
-          res.status(200).json(post);
+          // 是好友，返回貼文
+          return res.status(200).json(post);
         }
       );
     } else if (isPublic) {
       // 公開貼文且非私人帳戶，所有人都可見
-      res.status(200).json(post);
+      return res.status(200).json(post);
     } else {
+      // 其他情況（例如 visibility 不合法）
       return res.status(403).json({ error: "無權查看此貼文" });
     }
   });
