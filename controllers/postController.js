@@ -210,6 +210,8 @@ exports.getPostById = (req, res) => {
     return res.status(400).json({ error: "無效的貼文 ID" });
   }
 
+  console.log("請求的 postId:", postId, "userId:", userId);
+
   const query = `
     SELECT 
       p.id, 
@@ -224,13 +226,16 @@ exports.getPostById = (req, res) => {
       u.is_private,
       (SELECT COUNT(*) FROM likes WHERE target_type = 'post' AND target_id = p.id) AS likes,
       EXISTS(SELECT 1 FROM likes WHERE target_type = 'post' AND target_id = p.id AND user_id = ?) AS user_liked,
-      (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies
+      (SELECT COUNT(*) FROM replies WHERE post_id = p.id) AS replies,
+      EXISTS(SELECT 1 FROM friends WHERE status = 'accepted' AND (
+        (user_id = ? AND friend_id = p.user_id) OR (friend_id = ? AND user_id = p.user_id)
+      )) AS is_friend
     FROM posts p
     JOIN users u ON p.user_id = u.id
     WHERE p.id = ?
   `;
 
-  db.query(query, [userId, postId], (err, result) => {
+  db.query(query, [userId, userId, userId, postId], (err, result) => {
     if (err) {
       console.error("資料庫錯誤 - 獲取單一貼文: ", err);
       return res.status(500).json({ error: "伺服器內部錯誤" });
@@ -240,62 +245,46 @@ exports.getPostById = (req, res) => {
     }
 
     const post = result[0];
-    const isOwner = userId && parseInt(userId) === post.user_id;
-    const isPublic = post.visibility === "public" && !post.is_private;
+    console.log("貼文資料:", post);
 
     // 未登入用戶：只能看公開且非私人帳戶的貼文
     if (!userId) {
-      if (!isPublic) {
+      if (post.visibility !== "public" || post.is_private) {
         return res.status(403).json({ error: "無權查看此貼文" });
       }
       return res.status(200).json(post);
     }
 
     // 已登入用戶權限檢查
-    if (isOwner) {
-      // 作者本人可以看到自己的所有貼文
+    if (post.user_id === parseInt(userId)) {
+      // 作者本人可以看到所有自己的貼文
       return res.status(200).json(post);
     }
 
+    // 其他用戶的貼文權限檢查
     if (post.visibility === "private") {
-      // 私人貼文只有作者可見
       return res.status(403).json({ error: "無權查看此私人貼文" });
     }
 
     if (post.visibility === "friends") {
-      // 檢查好友關係
-      const friendCheckQuery = `
-        SELECT 1 
-        FROM friends 
-        WHERE status = 'accepted'
-        AND (
-          (user_id = ? AND friend_id = ?)
-          OR (friend_id = ? AND user_id = ?)
-        )
-        LIMIT 1
-      `;
-      db.query(
-        friendCheckQuery,
-        [userId, post.user_id, userId, post.user_id],
-        (friendErr, friendResult) => {
-          if (friendErr) {
-            console.error("資料庫錯誤 - 檢查好友關係: ", friendErr);
-            return res.status(500).json({ error: "伺服器內部錯誤" });
-          }
-          if (friendResult.length === 0) {
-            return res.status(403).json({ error: "無權查看此好友貼文" });
-          }
-          // 是好友，返回貼文
-          return res.status(200).json(post);
-        }
-      );
-    } else if (isPublic) {
-      // 公開貼文且非私人帳戶，所有人都可見
+      if (!post.is_friend) {
+        return res.status(403).json({ error: "無權查看此好友貼文" });
+      }
       return res.status(200).json(post);
-    } else {
-      // 其他情況（例如 visibility 不合法）
-      return res.status(403).json({ error: "無權查看此貼文" });
     }
+
+    if (post.visibility === "public") {
+      if (post.is_private) {
+        // 公開貼文但帳戶設為私人，需檢查好友關係
+        if (!post.is_friend) {
+          return res.status(403).json({ error: "無權查看此貼文" });
+        }
+      }
+      return res.status(200).json(post);
+    }
+
+    // 其他未預期的情況
+    return res.status(403).json({ error: "無權查看此貼文" });
   });
 };
 
