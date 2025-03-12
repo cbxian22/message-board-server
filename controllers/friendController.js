@@ -202,7 +202,7 @@ exports.getFriends = (req, res) => {
   const userId = req.user.userId;
 
   const query = `
-    SELECT u.id, u.name, u.account, u.intro, u.avatar_url
+    SELECT u.id, u.name, u.accountname, u.avatar_url
     FROM users u
     JOIN friends f ON (u.id = f.friend_id AND f.user_id = ?) OR (u.id = f.user_id AND f.friend_id = ?)
     WHERE f.status = 'accepted'
