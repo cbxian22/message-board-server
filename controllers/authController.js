@@ -61,56 +61,6 @@ exports.login = async (req, res) => {
 };
 
 // 刷新 token
-// exports.refreshToken = async (req, res) => {
-//   const { refreshToken } = req.body;
-//   if (!refreshToken)
-//     return res
-//       .status(400)
-//       .json({ success: false, message: "缺少 refreshToken" });
-
-//   try {
-//     // 驗證 refreshToken
-//     const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
-
-//     // 檢查資料庫中是否存在該 refreshToken 且未過期
-//     db.query(
-//       "SELECT * FROM refresh_tokens WHERE token = ? AND expires_at > NOW()",
-//       [refreshToken],
-//       (err, results) => {
-//         if (err) {
-//           console.error("資料庫查詢錯誤:", err);
-//           return res
-//             .status(500)
-//             .json({ success: false, message: "伺服器錯誤" });
-//         }
-//         if (results.length === 0) {
-//           return res
-//             .status(401)
-//             .json({ success: false, message: "無效或過期的 refreshToken" });
-//         }
-
-//         // 生成新的 accessToken
-//         const newAccessToken = jwt.sign(
-//           { userId: decoded.userId },
-//           ACCESS_TOKEN_SECRET,
-//           { expiresIn: "15m" }
-//         );
-
-//         // 返回新的 accessToken 和原始的 refreshToken，不更新資料庫
-//         res.status(200).json({
-//           success: true,
-//           accessToken: newAccessToken,
-//           refreshToken: refreshToken, // 保持原始 refreshToken 不變
-//         });
-//       }
-//     );
-//   } catch (error) {
-//     console.error("Refresh token 驗證失敗:", error);
-//     return res
-//       .status(401)
-//       .json({ success: false, message: "無效的 refreshToken" });
-//   }
-// };
 exports.refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
   if (!refreshToken)
@@ -119,47 +69,99 @@ exports.refreshToken = async (req, res) => {
       .json({ success: false, message: "缺少 refreshToken" });
 
   try {
+    // 驗證 refreshToken
     const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+
+    // 檢查資料庫中是否存在該 refreshToken 且未過期
     db.query(
       "SELECT * FROM refresh_tokens WHERE token = ? AND expires_at > NOW()",
       [refreshToken],
       (err, results) => {
         if (err) {
-          console.error("資料庫查詢錯誤:", err.message); // 添加詳細錯誤
+          console.error("資料庫查詢錯誤:", err);
           return res
             .status(500)
-            .json({
-              success: false,
-              message: "伺服器錯誤",
-              error: err.message,
-            });
+            .json({ success: false, message: "伺服器錯誤" });
         }
         if (results.length === 0) {
           return res
             .status(401)
             .json({ success: false, message: "無效或過期的 refreshToken" });
         }
+
+        // 生成新的 accessToken
         const newAccessToken = jwt.sign(
           { userId: decoded.userId },
           ACCESS_TOKEN_SECRET,
           { expiresIn: "15m" }
         );
+
+        // 返回新的 accessToken 和原始的 refreshToken，不更新資料庫
         res.status(200).json({
           success: true,
           accessToken: newAccessToken,
-          refreshToken,
+          refreshToken: refreshToken, // 保持原始 refreshToken 不變
         });
       }
     );
   } catch (error) {
-    console.error("Refresh token 驗證失敗:", error.message); // 添加詳細錯誤
+    console.error("Refresh token 驗證失敗:", error);
     return res
       .status(401)
       .json({ success: false, message: "無效的 refreshToken" });
   }
 };
 
+// exports.refreshToken = async (req, res) => {
+//   const { refreshToken } = req.body;
+//   if (!refreshToken)
+//     return res
+//       .status(400)
+//       .json({ success: false, message: "缺少 refreshToken" });
+
+//   try {
+//     const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+//     db.query(
+//       "SELECT * FROM refresh_tokens WHERE token = ? AND expires_at > NOW()",
+//       [refreshToken],
+//       (err, results) => {
+//         if (err) {
+//           console.error("資料庫查詢錯誤:", err.message); // 添加詳細錯誤
+//           return res
+//             .status(500)
+//             .json({
+//               success: false,
+//               message: "伺服器錯誤",
+//               error: err.message,
+//             });
+//         }
+//         if (results.length === 0) {
+//           return res
+//             .status(401)
+//             .json({ success: false, message: "無效或過期的 refreshToken" });
+//         }
+//         const newAccessToken = jwt.sign(
+//           { userId: decoded.userId },
+//           ACCESS_TOKEN_SECRET,
+//           { expiresIn: "15m" }
+//         );
+//         res.status(200).json({
+//           success: true,
+//           accessToken: newAccessToken,
+//           refreshToken,
+//         });
+//       }
+//     );
+//   } catch (error) {
+//     console.error("Refresh token 驗證失敗:", error.message); // 添加詳細錯誤
+//     return res
+//       .status(401)
+//       .json({ success: false, message: "無效的 refreshToken" });
+//   }
+// };
+
 // 登出所有裝置
+
 exports.logoutAll = async (req, res) => {
   const userId = req.user.userId; // 假設你有一個 auth middleware 提供 userId
   try {
@@ -263,39 +265,39 @@ exports.register = async (req, res) => {
 };
 
 // 調整 getCurrentUser，返回 is_private
-exports.getCurrentUser = (req, res) => {
-  if (!req.user || !req.user.userId) {
-    return res.status(401).json({ message: "未提供有效的認證憑證" });
-  }
-  const userId = req.user.userId;
-  db.query(
-    "SELECT id, name, account, accountname, intro, avatar_url, role, is_private FROM users WHERE id = ?",
-    [userId],
-    (err, results) => {
-      if (err) {
-        console.error("資料庫查詢失敗:", err);
-        return res
-          .status(500)
-          .json({ message: "伺服器錯誤", error: err.message }); // 添加錯誤訊息
-      }
-      if (results.length === 0) {
-        return res.status(404).json({ message: "用戶不存在" });
-      }
-      res.status(200).json(results[0]);
-    }
-  );
-};
-
 // exports.getCurrentUser = (req, res) => {
+//   if (!req.user || !req.user.userId) {
+//     return res.status(401).json({ message: "未提供有效的認證憑證" });
+//   }
 //   const userId = req.user.userId;
 //   db.query(
-//     "SELECT id, name, account,accountname, intro, avatar_url, role, is_private FROM users WHERE id = ?",
+//     "SELECT id, name, account, accountname, intro, avatar_url, role, is_private FROM users WHERE id = ?",
 //     [userId],
 //     (err, results) => {
-//       if (err) return res.status(500).json({ message: "伺服器錯誤" });
-//       if (results.length === 0)
+//       if (err) {
+//         console.error("資料庫查詢失敗:", err);
+//         return res
+//           .status(500)
+//           .json({ message: "伺服器錯誤", error: err.message }); // 添加錯誤訊息
+//       }
+//       if (results.length === 0) {
 //         return res.status(404).json({ message: "用戶不存在" });
+//       }
 //       res.status(200).json(results[0]);
 //     }
 //   );
 // };
+
+exports.getCurrentUser = (req, res) => {
+  const userId = req.user.userId;
+  db.query(
+    "SELECT id, name, account,accountname, intro, avatar_url, role, is_private FROM users WHERE id = ?",
+    [userId],
+    (err, results) => {
+      if (err) return res.status(500).json({ message: "伺服器錯誤" });
+      if (results.length === 0)
+        return res.status(404).json({ message: "用戶不存在" });
+      res.status(200).json(results[0]);
+    }
+  );
+};
