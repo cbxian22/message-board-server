@@ -265,39 +265,41 @@ exports.register = async (req, res) => {
 };
 
 // 調整 getCurrentUser，返回 is_private
-// exports.getCurrentUser = (req, res) => {
-//   if (!req.user || !req.user.userId) {
-//     return res.status(401).json({ message: "未提供有效的認證憑證" });
-//   }
-//   const userId = req.user.userId;
-//   db.query(
-//     "SELECT id, name, account, accountname, intro, avatar_url, role, is_private FROM users WHERE id = ?",
-//     [userId],
-//     (err, results) => {
-//       if (err) {
-//         console.error("資料庫查詢失敗:", err);
-//         return res
-//           .status(500)
-//           .json({ message: "伺服器錯誤", error: err.message }); // 添加錯誤訊息
-//       }
-//       if (results.length === 0) {
-//         return res.status(404).json({ message: "用戶不存在" });
-//       }
-//       res.status(200).json(results[0]);
-//     }
-//   );
-// };
-
 exports.getCurrentUser = (req, res) => {
+  if (!req.user || !req.user.userId) {
+    return res.status(401).json({ message: "未提供有效的認證憑證" });
+  }
+
   const userId = req.user.userId;
   db.query(
-    "SELECT id, name, account,accountname, intro, avatar_url, role, is_private FROM users WHERE id = ?",
+    "SELECT id, name, account, accountname, intro, avatar_url, role, is_private FROM users WHERE id = ?",
     [userId],
     (err, results) => {
-      if (err) return res.status(500).json({ message: "伺服器錯誤" });
-      if (results.length === 0)
+      if (err) {
+        console.error("資料庫查詢失敗:", err.message); // 记录详细错误
+        return res.status(500).json({
+          message: "伺服器錯誤",
+          error: err.message,
+        });
+      }
+      if (results.length === 0) {
         return res.status(404).json({ message: "用戶不存在" });
+      }
       res.status(200).json(results[0]);
     }
   );
 };
+
+// exports.getCurrentUser = (req, res) => {
+//   const userId = req.user.userId;
+//   db.query(
+//     "SELECT id, name, account,accountname, intro, avatar_url, role, is_private FROM users WHERE id = ?",
+//     [userId],
+//     (err, results) => {
+//       if (err) return res.status(500).json({ message: "伺服器錯誤" });
+//       if (results.length === 0)
+//         return res.status(404).json({ message: "用戶不存在" });
+//       res.status(200).json(results[0]);
+//     }
+//   );
+// };
