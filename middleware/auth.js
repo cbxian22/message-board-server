@@ -1,14 +1,13 @@
-// // middleware/auth.js
-// const jwt = require("jsonwebtoken");
-// const ACCESS_TOKEN_SECRET =
-//   process.env.JWT_SECRET || "your-access-token-secret";
+// // // middleware/auth.js
+const jwt = require("jsonwebtoken");
+const ACCESS_TOKEN_SECRET =
+  process.env.JWT_SECRET || "your-access-token-secret";
 
 // module.exports = (req, res, next) => {
 //   const authHeader = req.headers.authorization;
 //   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-//     console.log("無 Authorization 頭部，視為未登入");
-//     req.user = null;
-//     return next();
+//     console.log("無 Authorization 頭部");
+//     return res.status(401).json({ message: "未提供 Token" });
 //   }
 
 //   const token = authHeader.split(" ")[1];
@@ -19,21 +18,16 @@
 //     next();
 //   } catch (error) {
 //     console.error("Token 解析失敗:", error.message);
-//     req.user = null;
-//     next(); // token 無效時繼續執行，視為未登入
+//     return res.status(401).json({ message: "無效的 Token" });
 //   }
 // };
-
-// // middleware/auth.js
-const jwt = require("jsonwebtoken");
-const ACCESS_TOKEN_SECRET =
-  process.env.JWT_SECRET || "your-access-token-secret";
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.log("無 Authorization 頭部");
-    return res.status(401).json({ message: "未提供 Token" });
+    console.log("無 Authorization 頭部，設為訪客模式");
+    req.user = null; // 表示未登入
+    return next(); // 繼續執行
   }
 
   const token = authHeader.split(" ")[1];
