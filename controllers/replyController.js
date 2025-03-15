@@ -26,7 +26,7 @@ exports.createReply = (req, res) => {
 };
 
 exports.getAllReplies = (req, res) => {
-  const userId = req.user ? req.user.userId : null; // 未登入時為 null
+  const userId = req.user ? req.user.userId : null;
 
   const query = `
     SELECT 
@@ -54,6 +54,7 @@ exports.getAllReplies = (req, res) => {
 exports.getRepliesByPost = (req, res) => {
   const { postId } = req.params;
   const userId = req.user ? req.user.userId : null; // 未登入時為 null
+  console.log("getRepliesByPost - userId:", userId, "postId:", postId);
 
   const query = `
     SELECT 
@@ -75,6 +76,7 @@ exports.getRepliesByPost = (req, res) => {
       console.error("資料庫錯誤 - 獲取貼文回覆: ", err);
       return res.status(500).json({ error: "資料庫錯誤" });
     }
+    console.log("查詢結果:", results); // 除錯用
     res.status(200).json(results);
   });
 };
