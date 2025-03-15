@@ -7,9 +7,8 @@ const {
 const authMiddleware = require("../middleware/auth");
 const router = express.Router();
 
-router.get("/:accountname", getUserByAccountname); // 公開路由，根據名稱獲取用戶資訊
-// router.get("/me", authMiddleware, getCurrentUser);
-router.put("/profile", authMiddleware, updateUserProfile); // 受保護路由，更新用戶資料
-router.delete("/profile", authMiddleware, deleteUser); // 受保護路由，刪除用戶
+router.get("/:accountname", getUserByAccountname);
+router.put("/profile", authMiddleware, updateUserProfile);
+router.delete("/profile", authMiddleware, deleteUser);
 
 module.exports = router;

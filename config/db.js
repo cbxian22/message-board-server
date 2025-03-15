@@ -29,15 +29,15 @@ function pingMySQL() {
   console.log(`⏳ [${new Date().toISOString()}] 測試 Ping MySQL...`);
   db.query("SELECT 1", (err) => {
     if (err) {
-      console.error("❌ MySQL Ping 失敗:", err);
+      console.error(" MySQL Ping 失敗:", err);
     } else {
-      console.log(`✅ [${new Date().toISOString()}] MySQL 仍然活躍`);
+      console.log(`[${new Date().toISOString()}] MySQL 仍然活躍`);
     }
   });
 
-  setTimeout(pingMySQL, 300000); // 10 秒後再執行
+  setTimeout(pingMySQL, 300000);
 }
 
-pingMySQL(); // 啟動函數
+pingMySQL();
 
 module.exports = db;
