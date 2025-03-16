@@ -39,7 +39,6 @@ exports.getAllReplies = (req, res) => {
 
     FROM replies r
     JOIN users u ON r.user_id = u.id
-    GROUP BY r.id
     ORDER BY r.updated_at DESC
   `;
 
@@ -67,7 +66,6 @@ exports.getRepliesByPost = (req, res) => {
     FROM replies r
     JOIN users u ON r.user_id = u.id
     WHERE r.post_id = ?
-    GROUP BY r.id
     ORDER BY r.updated_at DESC
   `;
 
