@@ -36,7 +36,7 @@ exports.likeItem = async (req, res) => {
 
     // 檢查點讚狀態（不直接鎖定整個表）
     const checkQuery = `
-      SELECT
+      SELECT 
         EXISTS(SELECT 1 FROM ${targetTable} WHERE id = ?) AS target_exists,
         EXISTS(SELECT 1 FROM likes WHERE user_id = ? AND target_type = ? AND target_id = ?) AS has_liked,
         (SELECT COUNT(*) FROM likes WHERE target_type = ? AND target_id = ?) AS likes_count
