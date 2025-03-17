@@ -5,9 +5,9 @@ const authMiddleware = require("../middleware/auth");
 
 router.post("/:postId/:userId", authMiddleware, replyController.createReply);
 
-router.get("/", replyController.getAllReplies);
+router.get("/", authMiddleware, replyController.getAllReplies);
 
-router.get("/:postId", replyController.getRepliesByPost);
+router.get("/:postId", authMiddleware, replyController.getRepliesByPost);
 
 router.put("/:replyId/:userId", authMiddleware, replyController.updateReply);
 
