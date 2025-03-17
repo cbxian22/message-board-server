@@ -36,9 +36,9 @@ exports.getAllReplies = (req, res) => {
       u.avatar_url AS user_avatar,
       (SELECT COUNT(*) FROM likes WHERE target_type = 'reply' AND target_id = r.id) AS likes,
       EXISTS(SELECT 1 FROM likes WHERE target_type = 'reply' AND target_id = r.id AND user_id = ?) AS user_liked
-
     FROM replies r
     JOIN users u ON r.user_id = u.id
+    GROUP BY r.id
     ORDER BY r.updated_at DESC
   `;
 
@@ -51,29 +51,85 @@ exports.getAllReplies = (req, res) => {
   });
 };
 
+// exports.getRepliesByPost = (req, res) => {
+//   const { postId } = req.params;
+//   const userId = req.user ? req.user.userId : null; // 未登入時為 null
+
+//   const query = `
+//     SELECT
+//       r.id, r.post_id, r.content, r.user_id,
+//       r.created_at, r.updated_at, r.file_url,
+//       u.accountname AS user_name,
+//       u.avatar_url AS user_avatar,
+//       (SELECT COUNT(*) FROM likes WHERE target_type = 'reply' AND target_id = r.id) AS likes,
+//       EXISTS(SELECT 1 FROM likes WHERE target_type = 'reply' AND target_id = r.id AND user_id = ?) AS user_liked
+//     FROM replies r
+//     JOIN users u ON r.user_id = u.id
+//     WHERE r.post_id = ?
+//     GROUP BY r.id
+//     ORDER BY r.updated_at DESC
+//   `;
+
+//   db.query(query, [userId || null, postId], (err, results) => {
+//     if (err) {
+//       console.error("資料庫錯誤 - 獲取貼文回覆: ", err);
+//       return res.status(500).json({ error: "資料庫錯誤" });
+//     }
+//     res.status(200).json(results);
+//   });
+// };
+
 exports.getRepliesByPost = (req, res) => {
   const { postId } = req.params;
   const userId = req.user ? req.user.userId : null; // 未登入時為 null
 
-  const query = `
-    SELECT
-      r.id, r.post_id, r.content, r.user_id,
-      r.created_at, r.updated_at, r.file_url,
-      u.accountname AS user_name,
-      u.avatar_url AS user_avatar,
-      (SELECT COUNT(*) FROM likes WHERE target_type = 'reply' AND target_id = r.id) AS likes,
-      EXISTS(SELECT 1 FROM likes WHERE target_type = 'reply' AND target_id = r.id AND user_id = ?) AS user_liked
-    FROM replies r
-    JOIN users u ON r.user_id = u.id
-    WHERE r.post_id = ?
-    ORDER BY r.updated_at DESC
-  `;
+  let query;
+  let params;
 
-  db.query(query, [userId || null, postId], (err, results) => {
+  if (userId) {
+    console.log("登入用戶，獲取回覆，userId:", userId);
+    query = `
+      SELECT 
+        r.id, r.post_id, r.content, r.user_id, 
+        r.created_at, r.updated_at, r.file_url,
+        u.accountname AS user_name,
+        u.avatar_url AS user_avatar,
+        u.is_private,
+        (SELECT COUNT(*) FROM likes WHERE target_type = 'reply' AND target_id = r.id) AS likes,
+        EXISTS(SELECT 1 FROM likes WHERE target_type = 'reply' AND target_id = r.id AND user_id = ?) AS user_liked
+      FROM replies r
+      JOIN users u ON r.user_id = u.id
+      WHERE r.post_id = ?
+      GROUP BY r.id
+      ORDER BY r.updated_at DESC
+    `;
+    params = [userId, postId];
+  } else {
+    console.log("未登入用戶，獲取回覆");
+    query = `
+      SELECT 
+        r.id, r.post_id, r.content, r.user_id, 
+        r.created_at, r.updated_at, r.file_url,
+        u.accountname AS user_name,
+        u.avatar_url AS user_avatar,
+        u.is_private,
+        (SELECT COUNT(*) FROM likes WHERE target_type = 'reply' AND target_id = r.id) AS likes,
+        0 AS user_liked
+      FROM replies r
+      JOIN users u ON r.user_id = u.id
+      WHERE r.post_id = ?
+      GROUP BY r.id
+      ORDER BY r.updated_at DESC
+    `;
+    params = [postId];
+  }
+
+  db.query(query, params, (err, results) => {
     if (err) {
       console.error("資料庫錯誤 - 獲取貼文回覆: ", err);
       return res.status(500).json({ error: "資料庫錯誤" });
     }
+    console.log("返回的回覆數量:", results.length);
     res.status(200).json(results);
   });
 };
