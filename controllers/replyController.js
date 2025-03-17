@@ -50,6 +50,35 @@ exports.createReply = (req, res) => {
 //     res.status(200).json(results);
 //   });
 // };
+
+// exports.getRepliesByPost = (req, res) => {
+//   const { postId } = req.params;
+//   const userId = req.user ? req.user.userId : null; // 未登入時為 null
+
+//   const query = `
+//     SELECT
+//       r.id, r.post_id, r.content, r.user_id,
+//       r.created_at, r.updated_at, r.file_url,
+//       u.accountname AS user_name,
+//       u.avatar_url AS user_avatar,
+//       (SELECT COUNT(*) FROM likes WHERE target_type = 'reply' AND target_id = r.id) AS likes,
+//       EXISTS(SELECT 1 FROM likes WHERE target_type = 'reply' AND target_id = r.id AND user_id = ?) AS user_liked
+//     FROM replies r
+//     JOIN users u ON r.user_id = u.id
+//     WHERE r.post_id = ?
+//     GROUP BY r.id
+//     ORDER BY r.updated_at DESC
+//   `;
+
+//   db.query(query, [userId || null, postId], (err, results) => {
+//     if (err) {
+//       console.error("資料庫錯誤 - 獲取貼文回覆: ", err);
+//       return res.status(500).json({ error: "資料庫錯誤" });
+//     }
+//     res.status(200).json(results);
+//   });
+// };
+
 exports.getAllReplies = (req, res) => {
   const userId = req.user ? req.user.userId : null; // 未登入時為 null
 
@@ -82,33 +111,6 @@ exports.getAllReplies = (req, res) => {
   });
 };
 
-// exports.getRepliesByPost = (req, res) => {
-//   const { postId } = req.params;
-//   const userId = req.user ? req.user.userId : null; // 未登入時為 null
-
-//   const query = `
-//     SELECT
-//       r.id, r.post_id, r.content, r.user_id,
-//       r.created_at, r.updated_at, r.file_url,
-//       u.accountname AS user_name,
-//       u.avatar_url AS user_avatar,
-//       (SELECT COUNT(*) FROM likes WHERE target_type = 'reply' AND target_id = r.id) AS likes,
-//       EXISTS(SELECT 1 FROM likes WHERE target_type = 'reply' AND target_id = r.id AND user_id = ?) AS user_liked
-//     FROM replies r
-//     JOIN users u ON r.user_id = u.id
-//     WHERE r.post_id = ?
-//     GROUP BY r.id
-//     ORDER BY r.updated_at DESC
-//   `;
-
-//   db.query(query, [userId || null, postId], (err, results) => {
-//     if (err) {
-//       console.error("資料庫錯誤 - 獲取貼文回覆: ", err);
-//       return res.status(500).json({ error: "資料庫錯誤" });
-//     }
-//     res.status(200).json(results);
-//   });
-// };
 exports.getRepliesByPost = (req, res) => {
   const { postId } = req.params;
   const userId = req.user ? req.user.userId : null; // 未登入時為 null
