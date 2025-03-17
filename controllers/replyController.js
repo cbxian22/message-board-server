@@ -115,6 +115,9 @@ exports.getRepliesByPost = (req, res) => {
   const { postId } = req.params;
   const userId = req.user ? req.user.userId : null; // 未登入時為 null
 
+  console.log("postId:", postId);
+  console.log("userId:", userId);
+
   const query = `
     SELECT
       r.id, r.post_id, r.content, r.user_id,
